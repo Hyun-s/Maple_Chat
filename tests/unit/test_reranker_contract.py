@@ -302,3 +302,179 @@ def test_settings_validate_remote_reranker_boundary() -> None:
     cloud = base | {"RERANKER_BASE_URL": "https://api.cohere.ai/v1"}
     with patch.dict(os.environ, cloud, clear=True), pytest.raises(Exception, match="RERANKER"):
         Settings()
+
+
+def _mock_client(handler) -> httpx.AsyncClient:  # type: ignore[no-untyped-arg]
+    return httpx.AsyncClient(
+        transport=httpx.MockTransport(handler),
+        base_url="http://127.0.0.1:8082/v1/",
+    )
+
+
+_OK_INFO = {"model_id": "BAAI/bge-reranker-v2-m3", "model_sha": "commit-1"}
+
+
+@pytest.mark.asyncio
+async def test_remote_reranker_attests_once_across_repeated_score_calls() -> None:
+    calls: list[str] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request.url.path)
+        if request.url.path == "/info":
+            return httpx.Response(200, json=_OK_INFO)
+        return httpx.Response(200, json=[{"index": 0, "score": 0.5}])
+
+    async with _mock_client(handler) as client:
+        reranker = RemoteReranker(
+            _spec(),
+            base_url="http://127.0.0.1:8082/v1",
+            served_model="bge-reranker-v2-m3",
+            timeout_seconds=10,
+            client=client,
+        )
+        for _ in range(3):
+            assert await reranker.score("q", ["a"]) == [0.5]
+        await reranker.aclose()
+
+    assert calls == ["/info", "/rerank", "/rerank", "/rerank"]
+
+
+@pytest.mark.asyncio
+async def test_failed_attestation_is_not_cached_and_retried_next_score() -> None:
+    calls: list[str] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request.url.path)
+        return httpx.Response(200, json={"model_id": "evil", "model_sha": "commit-1"})
+
+    async with _mock_client(handler) as client:
+        reranker = RemoteReranker(
+            _spec(),
+            base_url="http://127.0.0.1:8082/v1",
+            served_model="bge-reranker-v2-m3",
+            timeout_seconds=10,
+            client=client,
+        )
+        for _ in range(2):
+            with pytest.raises(RuntimeError, match="model_id"):
+                await reranker.score("q", ["a"])
+
+    assert calls == ["/info", "/info"]
+
+
+@pytest.mark.asyncio
+async def test_remote_reranker_retries_429_then_succeeds_honouring_retry_after(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sleeps: list[float] = []
+
+    async def fake_sleep(delay: float) -> None:
+        sleeps.append(delay)
+
+    monkeypatch.setattr("asyncio.sleep", fake_sleep)
+    posts = 0
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal posts
+        if request.url.path == "/info":
+            return httpx.Response(200, json=_OK_INFO)
+        posts += 1
+        if posts == 1:
+            return httpx.Response(
+                429,
+                json={"error": "Model is overloaded"},
+                headers={"retry-after": "1"},
+            )
+        return httpx.Response(
+            200,
+            json=[{"index": 1, "score": 0.8}, {"index": 0, "score": 0.2}],
+        )
+
+    async with _mock_client(handler) as client:
+        reranker = RemoteReranker(
+            _spec(),
+            base_url="http://127.0.0.1:8082/v1",
+            served_model="bge-reranker-v2-m3",
+            timeout_seconds=10,
+            client=client,
+        )
+        assert await reranker.score("q", ["a", "b"]) == [0.2, 0.8]
+        await reranker.aclose()
+
+    assert posts == 2
+    assert sleeps == [1.0]
+
+
+@pytest.mark.asyncio
+async def test_remote_reranker_retries_429_during_attestation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sleeps: list[float] = []
+
+    async def fake_sleep(delay: float) -> None:
+        sleeps.append(delay)
+
+    monkeypatch.setattr("asyncio.sleep", fake_sleep)
+    infos = 0
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal infos
+        if request.url.path == "/info":
+            infos += 1
+            if infos == 1:
+                return httpx.Response(429, json={"error": "Model is overloaded"})
+            return httpx.Response(200, json=_OK_INFO)
+        return httpx.Response(200, json=[{"index": 0, "score": 0.6}])
+
+    async with _mock_client(handler) as client:
+        reranker = RemoteReranker(
+            _spec(),
+            base_url="http://127.0.0.1:8082/v1",
+            served_model="bge-reranker-v2-m3",
+            timeout_seconds=10,
+            client=client,
+        )
+        assert await reranker.score("q", ["a"]) == [0.6]
+        await reranker.aclose()
+
+    assert infos == 2
+    assert len(sleeps) == 1
+    assert 0.125 <= sleeps[0] <= 0.25
+
+
+@pytest.mark.asyncio
+async def test_remote_reranker_exhausts_bounded_retries_and_keeps_fail_open(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sleeps: list[float] = []
+
+    async def fake_sleep(delay: float) -> None:
+        sleeps.append(delay)
+
+    monkeypatch.setattr("asyncio.sleep", fake_sleep)
+    posts = 0
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal posts
+        if request.url.path == "/info":
+            return httpx.Response(200, json=_OK_INFO)
+        posts += 1
+        return httpx.Response(429, json={"error": "Model is overloaded"})
+
+    async with _mock_client(handler) as client:
+        reranker = RemoteReranker(
+            _spec(),
+            base_url="http://127.0.0.1:8082/v1",
+            served_model="bge-reranker-v2-m3",
+            timeout_seconds=10,
+            client=client,
+        )
+        # Exhaustion keeps the historical httpx failure semantics that the
+        # no-rerank fail-open path in qa/service.py depends on.
+        with pytest.raises(httpx.HTTPStatusError) as excinfo:
+            await reranker.score("q", ["a"])
+    assert excinfo.value.response.status_code == 429
+    assert posts == 3
+    assert len(sleeps) == 2
+    assert 0.125 <= sleeps[0] <= 0.25
+    assert 0.25 <= sleeps[1] <= 0.5

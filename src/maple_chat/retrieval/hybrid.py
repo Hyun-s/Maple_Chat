@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import math
 import os
+import random
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from importlib import import_module
@@ -95,6 +96,10 @@ class RemoteReranker:
         "host.docker.internal",
         "dcm-reranker",
     }
+    _MAX_ATTEMPTS: ClassVar[int] = 3
+    _BACKOFF_BASE_SECONDS: ClassVar[float] = 0.25
+    _BACKOFF_CAP_SECONDS: ClassVar[float] = 2.0
+    _RETRYABLE_STATUS_CODES: ClassVar[frozenset[int]] = frozenset({429, 503})
 
     def __init__(
         self,
@@ -123,32 +128,88 @@ class RemoteReranker:
         self._info_url = parsed._replace(path="/info").geturl()
         self._rerank_url = parsed._replace(path="/rerank").geturl()
         self._owns_client = client is None
+        self._timeout_seconds = timeout_seconds
         self._client = client or httpx.AsyncClient(
             base_url=f"{base_url.rstrip('/')}/",
             timeout=timeout_seconds,
         )
+        self._attestation_lock = asyncio.Lock()
+        self._attested = False
 
-    async def _attest_model(self) -> None:
-        response = await self._client.get(self._info_url)
-        response.raise_for_status()
-        try:
-            payload = response.json()
-        except ValueError as exc:
-            raise RuntimeError("reranker service /info returned invalid JSON") from exc
-        if not isinstance(payload, dict):
-            raise RuntimeError("reranker service /info returned an invalid response")
-        if payload.get("model_id") != self.spec.model:
-            raise RuntimeError("reranker service /info model_id does not match")
-        if payload.get("model_sha") != self.spec.model_commit:
-            raise RuntimeError("reranker service /info model_sha does not match")
+    async def _request_with_retry(
+        self,
+        method: str,
+        url: str,
+        *,
+        json_body: dict[str, object] | None = None,
+    ) -> httpx.Response:
+        """Send a request, retrying bounded TEI overload responses (429/503).
+
+        Exhaustion deliberately returns the final response so callers keep the
+        existing ``raise_for_status`` failure semantics that the no-rerank
+        fail-open path relies on.
+        """
+        attempt = 1
+        while True:
+            request = self._client.build_request(
+                method,
+                url,
+                json=json_body,
+                timeout=self._timeout_seconds,
+            )
+            response = await self._client.send(request)
+            if (
+                response.status_code not in self._RETRYABLE_STATUS_CODES
+                or attempt >= self._MAX_ATTEMPTS
+            ):
+                return response
+            await asyncio.sleep(self._retry_delay(attempt, response))
+            attempt += 1
+
+    def _retry_delay(self, attempt: int, response: httpx.Response) -> float:
+        retry_after = response.headers.get("retry-after")
+        if retry_after is not None:
+            try:
+                requested = float(retry_after)
+            except ValueError:
+                requested = -1.0
+            if requested >= 0 and math.isfinite(requested):
+                return min(requested, self._BACKOFF_CAP_SECONDS)
+        base = min(
+            self._BACKOFF_CAP_SECONDS,
+            self._BACKOFF_BASE_SECONDS * (2 ** (attempt - 1)),
+        )
+        jitter = 0.5 + random.random() / 2  # noqa: S311 - backoff jitter, not crypto
+        return float(base * jitter)
+
+    async def _ensure_attested(self) -> None:
+        """Attest the served model once per process and cache the verdict."""
+
+        async with self._attestation_lock:
+            if self._attested:
+                return
+            response = await self._request_with_retry("GET", self._info_url)
+            response.raise_for_status()
+            try:
+                payload = response.json()
+            except ValueError as exc:
+                raise RuntimeError("reranker service /info returned invalid JSON") from exc
+            if not isinstance(payload, dict):
+                raise RuntimeError("reranker service /info returned an invalid response")
+            if payload.get("model_id") != self.spec.model:
+                raise RuntimeError("reranker service /info model_id does not match")
+            if payload.get("model_sha") != self.spec.model_commit:
+                raise RuntimeError("reranker service /info model_sha does not match")
+            self._attested = True
 
     async def score(self, query: str, documents: list[str]) -> list[float]:
         if not documents:
             return []
-        await self._attest_model()
-        response = await self._client.post(
+        await self._ensure_attested()
+        response = await self._request_with_retry(
+            "POST",
             self._rerank_url,
-            json={
+            json_body={
                 "model": self._served_model,
                 "query": query,
                 "texts": documents,
