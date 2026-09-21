@@ -378,3 +378,50 @@ async def test_dense_candidates_pin_hnsw_ef_search_before_the_vector_scan() -> N
     assert executed[0] == f"SET LOCAL hnsw.ef_search = {hybrid._DENSE_EF_SEARCH}"
     assert "<=>" in executed[1]
     assert "ORDER BY" in executed[1]
+
+
+@pytest.mark.asyncio
+async def test_lexical_candidates_widen_the_parallel_scan_before_the_trigram_sort() -> None:
+    executed: list[str] = []
+    events: list[str] = []
+
+    class FakeTransaction:
+        async def __aenter__(self) -> FakeTransaction:
+            events.append("transaction:enter")
+            return self
+
+        async def __aexit__(self, *exc_info: object) -> bool:
+            events.append("transaction:exit")
+            return False
+
+    class FakeResult:
+        def all(self) -> list[tuple[object, float]]:
+            return []
+
+    class FakeSession:
+        def begin(self) -> FakeTransaction:
+            return FakeTransaction()
+
+        async def execute(self, statement: object) -> FakeResult:
+            events.append("execute")
+            executed.append(str(statement))
+            return FakeResult()
+
+        async def __aenter__(self) -> FakeSession:
+            return self
+
+        async def __aexit__(self, *exc_info: object) -> bool:
+            return False
+
+    candidates, query_seconds = await hybrid._lexical_candidates(
+        lambda: FakeSession(),  # type: ignore[arg-type]
+        "제논 하드 메이린 최소칸",
+        200,
+    )
+
+    assert candidates == []
+    assert query_seconds >= 0.0
+    assert executed == [*hybrid._LEXICAL_SCAN_GUC_STATEMENTS, executed[-1]]
+    assert events[:4] == ["transaction:enter", "execute", "execute", "execute"]
+    assert "similarity" in executed[-1]
+    assert "ORDER BY" in executed[-1]

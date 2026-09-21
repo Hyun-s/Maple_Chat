@@ -402,11 +402,26 @@ async def _dense_candidates(
     )
 
 
+# The lexical sweep computes pg_trgm similarity for every active row over ~161 MB of chunk
+# text, so the planner caps parallel workers by the default 8 MB ``min_parallel_table_scan_size``
+# and plans only 2 workers: measured 1.32 s. Dropping the cap to 1 MB plans 4 workers and
+# measured 0.80 s with byte-identical chunk order and scores; 512 kB planned 5 workers with no
+# further gain (0.80 s), and the existing gin_trgm_ops index stayed slower via the ``%``
+# operator (1.65 s), so the parallel scan stays and only the worker budget is widened.
+# ``SET LOCAL`` rejects bind parameters, so these stay pinned literals.
+_LEXICAL_SCAN_GUC_STATEMENTS: tuple[str, ...] = (
+    "SET LOCAL min_parallel_table_scan_size = '1MB'",
+    "SET LOCAL max_parallel_workers_per_gather = 4",
+)
+
+
 async def _lexical_candidates(
     factory: async_sessionmaker[AsyncSession], query: str, limit: int
 ) -> tuple[list[Candidate], float]:
     similarity = sa.func.similarity(Chunk.text, query).label("similarity")
-    async with factory() as session:
+    async with factory() as session, session.begin():
+        for statement in _LEXICAL_SCAN_GUC_STATEMENTS:
+            await session.execute(sa.text(statement))
         query_started_at = perf_counter()
         rows = (
             await session.execute(
