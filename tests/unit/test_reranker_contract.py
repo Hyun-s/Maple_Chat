@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from importlib import import_module as _real_import
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -612,3 +613,69 @@ async def test_tokenizer_loader_runs_once_across_repeated_score_calls() -> None:
 
     assert loader_calls == 1
     assert tokenizer.encode_calls == 4
+
+
+def test_load_rerank_tokenizer_stays_offline_and_caches_per_revision(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The truncation tokenizer must never touch the network and must load once."""
+    from maple_chat.retrieval import hybrid
+
+    calls: list[tuple[str, str]] = []
+    sentinel = object()
+
+    class _FakeAutoTokenizer:
+        @staticmethod
+        def from_pretrained(model: str, **kwargs: object) -> object:
+            calls.append((model, str(kwargs.get("revision"))))
+            assert kwargs.get("local_files_only") is True
+            return sentinel
+
+    fake_module = SimpleNamespace(AutoTokenizer=_FakeAutoTokenizer)
+    monkeypatch.setattr(
+        hybrid,
+        "import_module",
+        lambda name: fake_module if name == "transformers" else _real_import(name),
+    )
+    monkeypatch.setattr(hybrid, "_RERANK_TOKENIZER_CACHE", {})
+
+    first = hybrid._load_rerank_tokenizer("BAAI/bge-reranker-v2-m3", "commit-1")
+    second = hybrid._load_rerank_tokenizer("BAAI/bge-reranker-v2-m3", "commit-1")
+    hybrid._load_rerank_tokenizer("BAAI/bge-reranker-v2-m3", "commit-2")
+
+    assert first is sentinel
+    assert second is sentinel
+    assert calls == [
+        ("BAAI/bge-reranker-v2-m3", "commit-1"),
+        ("BAAI/bge-reranker-v2-m3", "commit-2"),
+    ]
+    assert os.environ["HF_HUB_OFFLINE"] == "1"
+    assert os.environ["TRANSFORMERS_OFFLINE"] == "1"
+
+
+def test_remote_reranker_defaults_to_the_pinned_revision_tokenizer() -> None:
+    """Without an injected loader, the client must ask for its own pinned revision."""
+    from maple_chat.retrieval import hybrid
+
+    seen: list[tuple[str, str]] = []
+    tokenizer = _PseudoTokenizer()
+    reranker = RemoteReranker(
+        _spec(),
+        base_url="http://127.0.0.1:8082",
+        served_model="bge-reranker-v2-m3",
+        timeout_seconds=10,
+        client=httpx.AsyncClient(
+            transport=httpx.MockTransport(lambda _request: httpx.Response(500))
+        ),
+    )
+    with patch.object(
+        hybrid,
+        "_load_rerank_tokenizer",
+        side_effect=lambda model, revision: seen.append((model, revision)) or tokenizer,
+    ):
+        truncated = reranker._truncate_documents(["doc"])
+
+    # _PseudoTokenizer re-encodes one character per pseudo-token and decodes to "T<n>".
+    assert truncated == ["T3"]
+    assert seen == [("BAAI/bge-reranker-v2-m3", "commit-1")]
+    assert tokenizer.encode_calls == 1

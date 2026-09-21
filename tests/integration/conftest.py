@@ -18,8 +18,11 @@ def _destructive_test_database_url() -> str:
     if os.environ.get("G002_ALLOW_DESTRUCTIVE_TEST_DATABASE") != "1":
         raise RuntimeError("integration DB reset requires G002_ALLOW_DESTRUCTIVE_TEST_DATABASE=1")
     test_database_url = os.environ["G002_DATABASE_URL"]
+    # A blank DATABASE_URL names no production database (compose supplies it per
+    # service, so the host .env commonly leaves it empty); only a real value can
+    # collide with the destructive test target.
     production_database_url = os.environ.get("DATABASE_URL")
-    if production_database_url is not None and _database_identity(
+    if production_database_url and _database_identity(
         make_url(test_database_url)
     ) == _database_identity(make_url(production_database_url)):
         raise RuntimeError("G002_DATABASE_URL matches DATABASE_URL; refusing destructive reset")

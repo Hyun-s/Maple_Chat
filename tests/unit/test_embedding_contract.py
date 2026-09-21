@@ -163,6 +163,66 @@ async def test_remote_embedding_provider_rechecks_tei_attestation_per_batch() ->
     ]
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("response", "error"),
+    [
+        (httpx.Response(200, content=b"text-embeddings-inference"), "invalid JSON"),
+        (httpx.Response(200, json=["model_id", "model_sha"]), "invalid response"),
+    ],
+)
+async def test_remote_embedding_provider_rejects_unparsable_info_attestation(
+    response: httpx.Response,
+    error: str,
+) -> None:
+    requests: list[tuple[str, str]] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        requests.append((request.method, request.url.path))
+        return response
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler),
+        base_url="http://127.0.0.1:8081/v1/",
+    ) as client:
+        provider = RemoteEmbeddingProvider(
+            EmbeddingSpec("v1", "BAAI/bge-m3", "commit-1"),
+            base_url="http://127.0.0.1:8081/v1",
+            served_model="bge-m3",
+            timeout_seconds=10,
+            client=client,
+        )
+        with pytest.raises(RuntimeError, match=error):
+            await provider.embed(["text"])
+
+    assert requests == [("GET", "/info")]
+
+
+@pytest.mark.asyncio
+async def test_remote_embedding_provider_short_circuits_without_texts() -> None:
+    """Indexing may ask for an empty page; that must not reach the model plane."""
+    requests: list[tuple[str, str]] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        requests.append((request.method, request.url.path))
+        raise AssertionError("no HTTP request expected for an empty batch")
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler),
+        base_url="http://127.0.0.1:8081/v1/",
+    ) as client:
+        provider = RemoteEmbeddingProvider(
+            EmbeddingSpec("v1", "BAAI/bge-m3", "commit-1"),
+            base_url="http://127.0.0.1:8081/v1",
+            served_model="bge-m3",
+            timeout_seconds=10,
+            client=client,
+        )
+        assert await provider.embed([]) == []
+
+    assert requests == []
+
+
 def _unit_vector(slot: int) -> list[float]:
     vector = [0.0] * 1024
     vector[slot] = 1.0
@@ -293,6 +353,115 @@ async def test_remote_embedding_provider_shards_without_advertised_capability() 
 
     assert batch_sizes == [32, 1]
     assert len(vectors) == 33
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("bad_payload", "error"),
+    [
+        (b"gateway-upstream", "invalid JSON"),
+        (["data"], "invalid response"),
+        ({"model": "bge-m3", "data": []}, "wrong vector count"),
+        (
+            {
+                "model": "bge-m3",
+                "data": [
+                    "not-an-entry",
+                    {"object": "embedding", "index": 0, "embedding": [1.0] * 1024},
+                ],
+            },
+            "invalid vector entry",
+        ),
+        (
+            {
+                "model": "bge-m3",
+                "data": [
+                    {"object": "embedding", "index": 7, "embedding": [1.0] * 1024},
+                    {"object": "embedding", "index": 0, "embedding": [1.0] * 1024},
+                ],
+            },
+            "invalid vector ordering",
+        ),
+        (
+            {
+                "model": "bge-m3",
+                "data": [
+                    {"object": "embedding", "index": 0, "embedding": _unit_vector(0)},
+                    {"object": "embedding", "index": 0, "embedding": _unit_vector(0)},
+                ],
+            },
+            "invalid vector ordering",
+        ),
+    ],
+)
+async def test_remote_embedding_provider_rejects_malformed_window_responses(
+    bad_payload: object,
+    error: str,
+) -> None:
+    """A shard that answers anything but a full, in-range vector set must fail closed."""
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/info":
+            return httpx.Response(
+                200,
+                json={"model_id": "BAAI/bge-m3", "model_sha": "commit-1"},
+            )
+        if isinstance(bad_payload, bytes):
+            return httpx.Response(200, content=bad_payload)
+        return httpx.Response(200, json=bad_payload)
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler),
+        base_url="http://127.0.0.1:8081/v1/",
+    ) as client:
+        provider = RemoteEmbeddingProvider(
+            EmbeddingSpec("v1", "BAAI/bge-m3", "commit-1"),
+            base_url="http://127.0.0.1:8081/v1",
+            served_model="bge-m3",
+            timeout_seconds=10,
+            client=client,
+        )
+        # Two texts: the "incomplete" shape returns only one vector for two inputs.
+        with pytest.raises(RuntimeError, match=error):
+            await provider.embed(["첫째", "둘째"])
+
+
+@pytest.mark.asyncio
+async def test_remote_embedding_provider_closes_a_client_it_owns() -> None:
+    """Without an injected client the provider must release its own connection pool."""
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/info":
+            return httpx.Response(
+                200,
+                json={"model_id": "BAAI/bge-m3", "model_sha": "commit-1"},
+            )
+        return httpx.Response(
+            200,
+            json={
+                "model": "bge-m3",
+                "data": [
+                    {
+                        "object": "embedding",
+                        "index": 0,
+                        "embedding": _unit_vector(0),
+                    }
+                ],
+            },
+        )
+
+    transport = httpx.MockTransport(handler)
+    provider = RemoteEmbeddingProvider(
+        EmbeddingSpec("v1", "BAAI/bge-m3", "commit-1"),
+        base_url="http://127.0.0.1:8081/v1",
+        served_model="bge-m3",
+        timeout_seconds=10,
+    )
+    provider._client = httpx.AsyncClient(transport=transport, base_url="http://127.0.0.1:8081/v1/")
+    provider._owns_client = True
+    assert await provider.embed(["첫째"]) == [_unit_vector(0)]
+    await provider.aclose()
+    assert provider._client.is_closed
 
 
 @pytest.mark.asyncio
