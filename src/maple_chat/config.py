@@ -112,6 +112,25 @@ class Settings(BaseSettings):
         default="BAAI/bge-reranker-v2-m3",
         validation_alias="RERANKER_MODEL",
     )
+    reranker_provider: Literal["local", "remote"] = Field(
+        default="local",
+        validation_alias="RERANKER_PROVIDER",
+    )
+    reranker_base_url: str = Field(
+        default="http://127.0.0.1:8082/v1",
+        validation_alias="RERANKER_BASE_URL",
+    )
+    reranker_remote_model: str = Field(
+        default="bge-reranker-v2-m3",
+        min_length=1,
+        validation_alias="RERANKER_REMOTE_MODEL",
+    )
+    reranker_timeout_seconds: float = Field(
+        default=60.0,
+        gt=0,
+        le=300,
+        validation_alias="RERANKER_TIMEOUT_SECONDS",
+    )
     embedding_model_commit: str = Field(
         default="5617a9f61b028005a4858fdac845db406aefb181",  # pragma: allowlist secret
         min_length=7,
@@ -230,6 +249,18 @@ class Settings(BaseSettings):
         ):
             raise ValueError("EMBEDDING_BASE_URL must target the approved local model boundary")
 
+        reranker_url = urlparse(self.reranker_base_url)
+        allowed_reranker_hosts = allowed_llm_hosts | {"dcm-reranker"}
+        if (
+            reranker_url.scheme not in {"http", "https"}
+            or reranker_url.hostname not in allowed_reranker_hosts
+            or reranker_url.username is not None
+            or reranker_url.password is not None
+            or reranker_url.query
+            or reranker_url.fragment
+        ):
+            raise ValueError("RERANKER_BASE_URL must target the approved local model boundary")
+
         if self.live_crawl_enabled and self.live_crawl_approval_file is None:
             raise ValueError("LIVE_CRAWL_APPROVAL_FILE is required when LIVE_CRAWL_ENABLED=true")
         return self
@@ -250,6 +281,9 @@ class Settings(BaseSettings):
             "embedding_provider": self.embedding_provider,
             "embedding_base_url": self.embedding_base_url,
             "embedding_remote_model": self.embedding_remote_model,
+            "reranker_provider": self.reranker_provider,
+            "reranker_base_url": self.reranker_base_url,
+            "reranker_remote_model": self.reranker_remote_model,
             "crawler_user_agent": self.crawler_user_agent,
             "crawler_contact": self.crawler_contact,
             "pii_hash_salt": "<redacted>",

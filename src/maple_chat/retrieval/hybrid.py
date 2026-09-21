@@ -8,8 +8,10 @@ import os
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from importlib import import_module
-from typing import Any, Protocol
+from typing import Any, ClassVar, Protocol, cast
+from urllib.parse import urlparse
 
+import httpx
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -75,6 +77,120 @@ class SentenceTransformerReranker:
         scores = await asyncio.to_thread(self._model.predict, pairs)
         values = scores.tolist() if hasattr(scores, "tolist") else scores
         return [float(value) for value in values]
+
+
+class RemoteReranker:
+    """Approved-local always-on BGE-reranker-v2-m3 HTTP client (TEI/vLLM compatible)."""
+
+    _ALLOWED_HOSTS: ClassVar[set[str]] = {
+        "127.0.0.1",
+        "::1",
+        "localhost",
+        "host.docker.internal",
+        "dcm-reranker",
+    }
+
+    def __init__(
+        self,
+        spec: RerankerSpec,
+        *,
+        base_url: str,
+        served_model: str,
+        timeout_seconds: float,
+        client: httpx.AsyncClient | None = None,
+    ) -> None:
+        spec.validate()
+        if not served_model.strip():
+            raise ValueError("reranker served model must not be empty")
+        parsed = urlparse(base_url)
+        if (
+            parsed.scheme not in {"http", "https"}
+            or parsed.hostname not in self._ALLOWED_HOSTS
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError("reranker base URL must target the approved local model boundary")
+        self.spec = spec
+        self._served_model = served_model
+        self._info_url = parsed._replace(path="/info").geturl()
+        self._owns_client = client is None
+        self._client = client or httpx.AsyncClient(
+            base_url=f"{base_url.rstrip('/')}/",
+            timeout=timeout_seconds,
+        )
+
+    async def _attest_model(self) -> None:
+        response = await self._client.get(self._info_url)
+        response.raise_for_status()
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            raise RuntimeError("reranker service /info returned invalid JSON") from exc
+        if not isinstance(payload, dict):
+            raise RuntimeError("reranker service /info returned an invalid response")
+        if payload.get("model_id") != self.spec.model:
+            raise RuntimeError("reranker service /info model_id does not match")
+        if payload.get("model_sha") != self.spec.model_commit:
+            raise RuntimeError("reranker service /info model_sha does not match")
+
+    async def score(self, query: str, documents: list[str]) -> list[float]:
+        if not documents:
+            return []
+        await self._attest_model()
+        response = await self._client.post(
+            "rerank",
+            json={
+                "model": self._served_model,
+                "query": query,
+                "texts": documents,
+            },
+        )
+        response.raise_for_status()
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            raise RuntimeError("reranker service returned invalid JSON") from exc
+        if isinstance(payload, dict):
+            response_model = payload.get("model")
+            if response_model is not None and response_model != self._served_model:
+                raise RuntimeError("reranker service model does not match the configured revision")
+            results = payload.get("results")
+        else:
+            results = payload
+        if not isinstance(results, list) or len(results) != len(documents):
+            raise RuntimeError("reranker service returned the wrong score count")
+        scores: list[float | None] = [None] * len(documents)
+        for item in results:
+            if not isinstance(item, dict):
+                raise RuntimeError("reranker service returned an invalid score entry")
+            index = item.get("index")
+            raw_score = item.get("relevance_score", item.get("score"))
+            if (
+                not isinstance(index, int)
+                or isinstance(index, bool)
+                or index < 0
+                or index >= len(documents)
+                or scores[index] is not None
+            ):
+                raise RuntimeError("reranker service returned invalid score ordering")
+            if isinstance(raw_score, bool) or not isinstance(raw_score, int | float):
+                raise RuntimeError("reranker service returned non-finite scores")
+            try:
+                value = float(raw_score)
+            except (OverflowError, ValueError) as exc:
+                raise RuntimeError("reranker service returned non-finite scores") from exc
+            if not math.isfinite(value):
+                raise RuntimeError("reranker service returned non-finite scores")
+            scores[index] = value
+        if any(score is None for score in scores):
+            raise RuntimeError("reranker service returned incomplete scores")
+        return [cast(float, score) for score in scores]
+
+    async def aclose(self) -> None:
+        if self._owns_client:
+            await self._client.aclose()
 
 
 def _quality_boost(metadata: dict[str, Any], *, now: datetime) -> float:

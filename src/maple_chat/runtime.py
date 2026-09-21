@@ -43,6 +43,8 @@ from maple_chat.qa.service import (
     load_answer_sources,
 )
 from maple_chat.retrieval.hybrid import (
+    RemoteReranker,
+    Reranker,
     RerankerSpec,
     RetrievalResult,
     SentenceTransformerReranker,
@@ -78,12 +80,24 @@ def reranker_spec(settings: Settings) -> RerankerSpec:
     return RerankerSpec(settings.reranker_model, settings.reranker_model_commit)
 
 
+def build_reranker(settings: Settings) -> Reranker:
+    spec = reranker_spec(settings)
+    if settings.reranker_provider == "remote":
+        return RemoteReranker(
+            spec,
+            base_url=settings.reranker_base_url,
+            served_model=settings.reranker_remote_model,
+            timeout_seconds=settings.reranker_timeout_seconds,
+        )
+    return SentenceTransformerReranker(spec)
+
+
 class DatabaseHybridRetriever:
     def __init__(
         self,
         factory: async_sessionmaker[AsyncSession],
         embedding: EmbeddingProvider,
-        reranker: SentenceTransformerReranker,
+        reranker: Reranker,
         knowledge_retriever: DatabaseKnowledgeRetriever | None = None,
     ) -> None:
         self.factory = factory
@@ -306,7 +320,7 @@ async def run_discord_bot(settings: Settings) -> None:
                 )
             )
         embedding = build_embedding_provider(settings)
-        reranker = SentenceTransformerReranker(reranker_spec(settings))
+        reranker = build_reranker(settings)
         knowledge_retriever = DatabaseKnowledgeRetriever(factory)
         retriever = DatabaseHybridRetriever(
             factory, embedding, reranker, knowledge_retriever=knowledge_retriever
