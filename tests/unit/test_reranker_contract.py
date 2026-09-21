@@ -55,7 +55,9 @@ async def test_remote_reranker_preserves_revision_order_tei_shape() -> None:
     assert requests == [{"model": "bge-reranker-v2-m3", "query": "질의", "texts": ["첫째", "둘째"]}]
     assert request_targets == [
         ("GET", "http://127.0.0.1:8082/info"),
-        ("POST", "http://127.0.0.1:8082/v1/rerank"),
+        # TEI 404s /v1/rerank; the client must pin the endpoint to the origin root
+        # even when base_url carries the /v1 service path.
+        ("POST", "http://127.0.0.1:8082/rerank"),
     ]
 
 

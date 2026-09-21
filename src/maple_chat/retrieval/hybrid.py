@@ -80,7 +80,13 @@ class SentenceTransformerReranker:
 
 
 class RemoteReranker:
-    """Approved-local always-on BGE-reranker-v2-m3 HTTP client (TEI/vLLM compatible)."""
+    """Approved-local always-on BGE-reranker-v2-m3 HTTP client (TEI/vLLM compatible).
+
+    TEI 1.9 serves rerank requests at the origin-root ``/rerank`` path and
+    returns 404 for ``/v1/rerank``, so the rerank and ``/info`` attestation
+    URLs are pinned to the origin root regardless of any service path
+    (for example ``/v1``) carried by ``base_url``.
+    """
 
     _ALLOWED_HOSTS: ClassVar[set[str]] = {
         "127.0.0.1",
@@ -115,6 +121,7 @@ class RemoteReranker:
         self.spec = spec
         self._served_model = served_model
         self._info_url = parsed._replace(path="/info").geturl()
+        self._rerank_url = parsed._replace(path="/rerank").geturl()
         self._owns_client = client is None
         self._client = client or httpx.AsyncClient(
             base_url=f"{base_url.rstrip('/')}/",
@@ -140,7 +147,7 @@ class RemoteReranker:
             return []
         await self._attest_model()
         response = await self._client.post(
-            "rerank",
+            self._rerank_url,
             json={
                 "model": self._served_model,
                 "query": query,

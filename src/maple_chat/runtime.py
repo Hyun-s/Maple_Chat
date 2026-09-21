@@ -303,6 +303,7 @@ async def run_discord_bot(settings: Settings) -> None:
     )
     nexon_client: NexonOpenAPIClient | None = None
     embedding: EmbeddingProvider | None = None
+    reranker: Reranker | None = None
     try:
         await check_database(factory)
         async with factory() as session, session.begin():
@@ -365,5 +366,7 @@ async def run_discord_bot(settings: Settings) -> None:
             await nexon_client.aclose()
         if embedding is not None:
             await embedding.aclose()
+        if isinstance(reranker, RemoteReranker):
+            await reranker.aclose()
         await llm.aclose()
         await engine.dispose()
