@@ -45,4 +45,9 @@ if [[ "${RUN_WEEKLY_PATCH_SYNC:-true}" == "true" ]]; then
   weekly_patch_sync_pid=$!
 fi
 
+if [[ "${BOT_DISABLE_CUDA:-false}" == "true" ]]; then
+  # Keep the in-process BGE cross-encoder on CPU: the GPU is already held by the
+  # local serving stack, and embeddings are served by the remote TEI server.
+  export CUDA_VISIBLE_DEVICES=""
+fi
 conda_run maple-chat run-bot
