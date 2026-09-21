@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-from importlib import import_module as _real_import
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -16,36 +15,6 @@ from maple_chat.retrieval.hybrid import RemoteReranker, RerankerSpec
 
 def _spec() -> RerankerSpec:
     return RerankerSpec("BAAI/bge-reranker-v2-m3", "commit-1")
-
-
-def _no_tokenizer() -> None:
-    """Default for existing tests: tokenizer unavailable must keep bodies verbatim."""
-
-    raise RuntimeError("tokenizer disabled in this test")
-
-
-class _PseudoTokenizer:
-    """Deterministic stand-in treating one character as one pseudo-token."""
-
-    def __init__(self) -> None:
-        self.encode_calls = 0
-
-    def __call__(
-        self,
-        text: str,
-        *,
-        truncation: bool = False,
-        max_length: int | None = None,
-        add_special_tokens: bool = True,
-    ) -> dict[str, list[int]]:
-        self.encode_calls += 1
-        ids = list(range(len(text)))
-        if truncation and max_length is not None:
-            ids = ids[:max_length]
-        return {"input_ids": ids}
-
-    def decode(self, ids: list[int], **kwargs: object) -> str:
-        return "T" + str(len(ids))
 
 
 @pytest.mark.asyncio
@@ -79,7 +48,6 @@ async def test_remote_reranker_preserves_revision_order_tei_shape() -> None:
             served_model="bge-reranker-v2-m3",
             timeout_seconds=10,
             client=client,
-            tokenizer_loader=_no_tokenizer,
         )
         assert await reranker.score("질의", ["첫째", "둘째"]) == [0.1, 0.9]
         await reranker.aclose()
@@ -122,7 +90,6 @@ async def test_remote_reranker_accepts_vllm_results_shape() -> None:
             served_model="bge-reranker-v2-m3",
             timeout_seconds=10,
             client=client,
-            tokenizer_loader=_no_tokenizer,
         )
         assert await reranker.score("q", ["a", "b"]) == [0.75, 0.25]
 
@@ -157,7 +124,6 @@ async def test_remote_reranker_rejects_unattested_service(
             served_model="bge-reranker-v2-m3",
             timeout_seconds=10,
             client=client,
-            tokenizer_loader=_no_tokenizer,
         )
         with pytest.raises(RuntimeError, match=error):
             await reranker.score("q", ["a"])
@@ -207,7 +173,6 @@ async def test_remote_reranker_rejects_malformed_scores(
             served_model="bge-reranker-v2-m3",
             timeout_seconds=10,
             client=client,
-            tokenizer_loader=_no_tokenizer,
         )
         with pytest.raises(RuntimeError, match=error):
             await reranker.score("q", ["a", "b"])
@@ -231,7 +196,6 @@ async def test_remote_reranker_empty_documents_short_circuits() -> None:
             served_model="bge-reranker-v2-m3",
             timeout_seconds=10,
             client=client,
-            tokenizer_loader=_no_tokenizer,
         )
         assert await reranker.score("q", []) == []
     assert calls == []
@@ -367,7 +331,6 @@ async def test_remote_reranker_attests_once_across_repeated_score_calls() -> Non
             served_model="bge-reranker-v2-m3",
             timeout_seconds=10,
             client=client,
-            tokenizer_loader=_no_tokenizer,
         )
         for _ in range(3):
             assert await reranker.score("q", ["a"]) == [0.5]
@@ -391,7 +354,6 @@ async def test_failed_attestation_is_not_cached_and_retried_next_score() -> None
             served_model="bge-reranker-v2-m3",
             timeout_seconds=10,
             client=client,
-            tokenizer_loader=_no_tokenizer,
         )
         for _ in range(2):
             with pytest.raises(RuntimeError, match="model_id"):
@@ -435,7 +397,6 @@ async def test_remote_reranker_retries_429_then_succeeds_honouring_retry_after(
             served_model="bge-reranker-v2-m3",
             timeout_seconds=10,
             client=client,
-            tokenizer_loader=_no_tokenizer,
         )
         assert await reranker.score("q", ["a", "b"]) == [0.2, 0.8]
         await reranker.aclose()
@@ -472,7 +433,6 @@ async def test_remote_reranker_retries_429_during_attestation(
             served_model="bge-reranker-v2-m3",
             timeout_seconds=10,
             client=client,
-            tokenizer_loader=_no_tokenizer,
         )
         assert await reranker.score("q", ["a"]) == [0.6]
         await reranker.aclose()
@@ -508,7 +468,6 @@ async def test_remote_reranker_exhausts_bounded_retries_and_keeps_fail_open(
             served_model="bge-reranker-v2-m3",
             timeout_seconds=10,
             client=client,
-            tokenizer_loader=_no_tokenizer,
         )
         # Exhaustion keeps the historical httpx failure semantics that the
         # no-rerank fail-open path in qa/service.py depends on.
@@ -519,163 +478,3 @@ async def test_remote_reranker_exhausts_bounded_retries_and_keeps_fail_open(
     assert len(sleeps) == 2
     assert 0.125 <= sleeps[0] <= 0.25
     assert 0.25 <= sleeps[1] <= 0.5
-
-
-@pytest.mark.asyncio
-async def test_score_truncates_documents_to_the_pinned_token_budget() -> None:
-    bodies: list[dict[str, object]] = []
-    tokenizer = _PseudoTokenizer()
-
-    async def handler(request: httpx.Request) -> httpx.Response:
-        if request.url.path == "/info":
-            return httpx.Response(200, json=_OK_INFO)
-        bodies.append(json.loads(request.content))
-        return httpx.Response(
-            200,
-            json=[{"index": 1, "score": 0.9}, {"index": 0, "score": 0.1}],
-        )
-
-    async with _mock_client(handler) as client:
-        reranker = RemoteReranker(
-            _spec(),
-            base_url="http://127.0.0.1:8082/v1",
-            served_model="bge-reranker-v2-m3",
-            timeout_seconds=10,
-            client=client,
-            tokenizer_loader=lambda: tokenizer,
-        )
-        assert await reranker.score("q", ["x" * 600, "가나다"]) == [0.1, 0.9]
-        await reranker.aclose()
-
-    assert bodies[0]["texts"] == ["T480", "T3"]
-    assert tokenizer.encode_calls == 2
-
-
-@pytest.mark.asyncio
-async def test_score_keeps_documents_verbatim_when_tokenizer_unavailable() -> None:
-    bodies: list[dict[str, object]] = []
-
-    async def handler(request: httpx.Request) -> httpx.Response:
-        if request.url.path == "/info":
-            return httpx.Response(200, json=_OK_INFO)
-        bodies.append(json.loads(request.content))
-        return httpx.Response(
-            200,
-            json=[{"index": 0, "score": 0.4}, {"index": 1, "score": 0.3}],
-        )
-
-    async with _mock_client(handler) as client:
-        reranker = RemoteReranker(
-            _spec(),
-            base_url="http://127.0.0.1:8082/v1",
-            served_model="bge-reranker-v2-m3",
-            timeout_seconds=10,
-            client=client,
-            tokenizer_loader=_no_tokenizer,
-        )
-        docs = ["x" * 600, "short"]
-        assert await reranker.score("q", docs) == [0.4, 0.3]
-        await reranker.aclose()
-
-    assert bodies[0]["texts"] == ["x" * 600, "short"]
-
-
-@pytest.mark.asyncio
-async def test_tokenizer_loader_runs_once_across_repeated_score_calls() -> None:
-    loader_calls = 0
-    tokenizer = _PseudoTokenizer()
-
-    def loader() -> _PseudoTokenizer:
-        nonlocal loader_calls
-        loader_calls += 1
-        return tokenizer
-
-    async def handler(request: httpx.Request) -> httpx.Response:
-        if request.url.path == "/info":
-            return httpx.Response(200, json=_OK_INFO)
-        return httpx.Response(
-            200,
-            json=[{"index": 0, "score": 0.5}, {"index": 1, "score": 0.6}],
-        )
-
-    async with _mock_client(handler) as client:
-        reranker = RemoteReranker(
-            _spec(),
-            base_url="http://127.0.0.1:8082/v1",
-            served_model="bge-reranker-v2-m3",
-            timeout_seconds=10,
-            client=client,
-            tokenizer_loader=loader,
-        )
-        for _ in range(2):
-            assert await reranker.score("q", ["a", "bb"]) == [0.5, 0.6]
-        await reranker.aclose()
-
-    assert loader_calls == 1
-    assert tokenizer.encode_calls == 4
-
-
-def test_load_rerank_tokenizer_stays_offline_and_caches_per_revision(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """The truncation tokenizer must never touch the network and must load once."""
-    from maple_chat.retrieval import hybrid
-
-    calls: list[tuple[str, str]] = []
-    sentinel = object()
-
-    class _FakeAutoTokenizer:
-        @staticmethod
-        def from_pretrained(model: str, **kwargs: object) -> object:
-            calls.append((model, str(kwargs.get("revision"))))
-            assert kwargs.get("local_files_only") is True
-            return sentinel
-
-    fake_module = SimpleNamespace(AutoTokenizer=_FakeAutoTokenizer)
-    monkeypatch.setattr(
-        hybrid,
-        "import_module",
-        lambda name: fake_module if name == "transformers" else _real_import(name),
-    )
-    monkeypatch.setattr(hybrid, "_RERANK_TOKENIZER_CACHE", {})
-
-    first = hybrid._load_rerank_tokenizer("BAAI/bge-reranker-v2-m3", "commit-1")
-    second = hybrid._load_rerank_tokenizer("BAAI/bge-reranker-v2-m3", "commit-1")
-    hybrid._load_rerank_tokenizer("BAAI/bge-reranker-v2-m3", "commit-2")
-
-    assert first is sentinel
-    assert second is sentinel
-    assert calls == [
-        ("BAAI/bge-reranker-v2-m3", "commit-1"),
-        ("BAAI/bge-reranker-v2-m3", "commit-2"),
-    ]
-    assert os.environ["HF_HUB_OFFLINE"] == "1"
-    assert os.environ["TRANSFORMERS_OFFLINE"] == "1"
-
-
-def test_remote_reranker_defaults_to_the_pinned_revision_tokenizer() -> None:
-    """Without an injected loader, the client must ask for its own pinned revision."""
-    from maple_chat.retrieval import hybrid
-
-    seen: list[tuple[str, str]] = []
-    tokenizer = _PseudoTokenizer()
-    reranker = RemoteReranker(
-        _spec(),
-        base_url="http://127.0.0.1:8082",
-        served_model="bge-reranker-v2-m3",
-        timeout_seconds=10,
-        client=httpx.AsyncClient(
-            transport=httpx.MockTransport(lambda _request: httpx.Response(500))
-        ),
-    )
-    with patch.object(
-        hybrid,
-        "_load_rerank_tokenizer",
-        side_effect=lambda model, revision: seen.append((model, revision)) or tokenizer,
-    ):
-        truncated = reranker._truncate_documents(["doc"])
-
-    # _PseudoTokenizer re-encodes one character per pseudo-token and decodes to "T<n>".
-    assert truncated == ["T3"]
-    assert seen == [("BAAI/bge-reranker-v2-m3", "commit-1")]
-    assert tokenizer.encode_calls == 1
