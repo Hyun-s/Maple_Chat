@@ -1,0 +1,82 @@
+{
+  "protocol_id": "zero-community-qa-2026-09-03",
+  "run_date": "2026-09-03",
+  "condition": "open-corpus-production-retrieval-only",
+  "target_post_source": "article:2294:452426",
+  "corpus": {
+    "indexed_articles": 19190,
+    "indexed_comments": 76164,
+    "active_chunks": 98801,
+    "active_embeddings": 98801
+  },
+  "models": {
+    "embedding": "BAAI/bge-m3@5617a9f61b028005a4858fdac845db406aefb181",
+    "reranker": "BAAI/bge-reranker-v2-m3@953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e"
+  },
+  "top_k": 8,
+  "aggregate": {
+    "answer_source_recall_at_8": 0.5,
+    "mrr_at_8": 0.5
+  },
+  "cases": [
+    {
+      "id": "weapon-direct",
+      "gold_rank": 1,
+      "target_post_source_count": 1,
+      "retrieved_sources": [
+        "comment:article:2294:452426:1736688",
+        "comment:article:2294:453185:1739524",
+        "article:2294:453259",
+        "article:-1001:794",
+        "article:2294:453199",
+        "article:-1001:790",
+        "article:2294:453698",
+        "article:2294:452739"
+      ]
+    },
+    {
+      "id": "weapon-paraphrase",
+      "gold_rank": null,
+      "target_post_source_count": 1,
+      "retrieved_sources": [
+        "article:-1001:794",
+        "comment:article:2294:452426:1736371",
+        "article:-1001:805",
+        "article:-1001:799"
+      ]
+    },
+    {
+      "id": "weapon-constraint",
+      "gold_rank": 1,
+      "target_post_source_count": 1,
+      "retrieved_sources": [
+        "comment:article:2294:452426:1736688",
+        "article:2294:453509",
+        "article:-1001:794",
+        "article:-1001:799",
+        "article:-1001:805",
+        "article:2294:453259",
+        "comment:article:2294:453069:1738722",
+        "comment:article:2294:453509:1739876"
+      ]
+    },
+    {
+      "id": "weapon-typo",
+      "gold_rank": null,
+      "target_post_source_count": 1,
+      "retrieved_sources": [
+        "comment:article:2294:452426:1738880",
+        "comment:article:2294:452641:1737179",
+        "article:2294:453185",
+        "article:-1001:794",
+        "comment:article:2294:459509:1760218",
+        "article:2294:453732"
+      ]
+    }
+  ],
+  "limitations": [
+    "retrieval only; generation and abstention were not measured",
+    "open-corpus condition; source containment is diagnostic rather than gated",
+    "four query mutations from one gold pair; no population-level generalization"
+  ]
+}

@@ -1,0 +1,488 @@
+{
+  "patch_date_kst": "2026-09-10",
+  "expected_total": 48,
+  "completed": 48,
+  "reports": [
+    {
+      "index": 1,
+      "job": "히어로",
+      "families": [
+        "전사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "001-hero.md"
+    },
+    {
+      "index": 2,
+      "job": "팔라딘",
+      "families": [
+        "전사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "002-paladin.md"
+    },
+    {
+      "index": 3,
+      "job": "다크나이트",
+      "families": [
+        "전사"
+      ],
+      "status": "summarized",
+      "evidence_count": 1,
+      "path": "003-dark-knight.md"
+    },
+    {
+      "index": 4,
+      "job": "소울마스터",
+      "families": [
+        "전사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "004-soul-master.md"
+    },
+    {
+      "index": 5,
+      "job": "미하일",
+      "families": [
+        "전사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "005-mihile.md"
+    },
+    {
+      "index": 6,
+      "job": "블래스터",
+      "families": [
+        "전사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "006-blaster.md"
+    },
+    {
+      "index": 7,
+      "job": "데몬 슬레이어",
+      "families": [
+        "전사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "007-demon-slayer.md"
+    },
+    {
+      "index": 8,
+      "job": "데몬 어벤져",
+      "families": [
+        "전사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "008-demon-avenger.md"
+    },
+    {
+      "index": 9,
+      "job": "아란",
+      "families": [
+        "전사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "009-aran.md"
+    },
+    {
+      "index": 10,
+      "job": "카이저",
+      "families": [
+        "전사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "010-kaiser.md"
+    },
+    {
+      "index": 11,
+      "job": "아델",
+      "families": [
+        "전사"
+      ],
+      "status": "summarized",
+      "evidence_count": 5,
+      "path": "011-adele.md"
+    },
+    {
+      "index": 12,
+      "job": "렌",
+      "families": [
+        "전사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "012-len.md"
+    },
+    {
+      "index": 13,
+      "job": "제로",
+      "families": [
+        "전사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "013-zero.md"
+    },
+    {
+      "index": 14,
+      "job": "아크메이지(불,독)",
+      "families": [
+        "마법사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "014-arch-mage-fire-poison.md"
+    },
+    {
+      "index": 15,
+      "job": "아크메이지(썬,콜)",
+      "families": [
+        "마법사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "015-arch-mage-ice-lightning.md"
+    },
+    {
+      "index": 16,
+      "job": "비숍",
+      "families": [
+        "마법사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "016-bishop.md"
+    },
+    {
+      "index": 17,
+      "job": "플레임위자드",
+      "families": [
+        "마법사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "017-flame-wizard.md"
+    },
+    {
+      "index": 18,
+      "job": "배틀메이지",
+      "families": [
+        "마법사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "018-battle-mage.md"
+    },
+    {
+      "index": 19,
+      "job": "에반",
+      "families": [
+        "마법사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "019-evan.md"
+    },
+    {
+      "index": 20,
+      "job": "루미너스",
+      "families": [
+        "마법사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "020-luminous.md"
+    },
+    {
+      "index": 21,
+      "job": "일리움",
+      "families": [
+        "마법사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "021-illium.md"
+    },
+    {
+      "index": 22,
+      "job": "라라",
+      "families": [
+        "마법사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "022-lara.md"
+    },
+    {
+      "index": 23,
+      "job": "키네시스",
+      "families": [
+        "마법사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "023-kinesis.md"
+    },
+    {
+      "index": 24,
+      "job": "레테",
+      "families": [
+        "마법사"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "024-lethe.md"
+    },
+    {
+      "index": 25,
+      "job": "보우마스터",
+      "families": [
+        "궁수"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "025-bow-master.md"
+    },
+    {
+      "index": 26,
+      "job": "신궁",
+      "families": [
+        "궁수"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "026-marksman.md"
+    },
+    {
+      "index": 27,
+      "job": "패스파인더",
+      "families": [
+        "궁수"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "027-pathfinder.md"
+    },
+    {
+      "index": 28,
+      "job": "윈드브레이커",
+      "families": [
+        "궁수"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "028-wind-breaker.md"
+    },
+    {
+      "index": 29,
+      "job": "와일드헌터",
+      "families": [
+        "궁수"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "029-wild-hunter.md"
+    },
+    {
+      "index": 30,
+      "job": "메르세데스",
+      "families": [
+        "궁수"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "030-mercedes.md"
+    },
+    {
+      "index": 31,
+      "job": "카인",
+      "families": [
+        "궁수"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "031-kain.md"
+    },
+    {
+      "index": 32,
+      "job": "나이트로드",
+      "families": [
+        "도적"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "032-night-lord.md"
+    },
+    {
+      "index": 33,
+      "job": "섀도어",
+      "families": [
+        "도적"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "033-shadower.md"
+    },
+    {
+      "index": 34,
+      "job": "듀얼블레이드",
+      "families": [
+        "도적"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "034-dual-blade.md"
+    },
+    {
+      "index": 35,
+      "job": "나이트워커",
+      "families": [
+        "도적"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "035-night-walker.md"
+    },
+    {
+      "index": 36,
+      "job": "팬텀",
+      "families": [
+        "도적"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "036-phantom.md"
+    },
+    {
+      "index": 37,
+      "job": "카데나",
+      "families": [
+        "도적"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "037-cadena.md"
+    },
+    {
+      "index": 38,
+      "job": "칼리",
+      "families": [
+        "도적"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "038-khali.md"
+    },
+    {
+      "index": 39,
+      "job": "호영",
+      "families": [
+        "도적"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "039-hoyoung.md"
+    },
+    {
+      "index": 40,
+      "job": "제논",
+      "families": [
+        "도적",
+        "해적"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "040-xenon.md"
+    },
+    {
+      "index": 41,
+      "job": "바이퍼",
+      "families": [
+        "해적"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "041-buccaneer.md"
+    },
+    {
+      "index": 42,
+      "job": "캡틴",
+      "families": [
+        "해적"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "042-corsair.md"
+    },
+    {
+      "index": 43,
+      "job": "캐논슈터",
+      "families": [
+        "해적"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "043-cannon-shooter.md"
+    },
+    {
+      "index": 44,
+      "job": "스트라이커",
+      "families": [
+        "해적"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "044-thunder-breaker.md"
+    },
+    {
+      "index": 45,
+      "job": "메카닉",
+      "families": [
+        "해적"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "045-mechanic.md"
+    },
+    {
+      "index": 46,
+      "job": "은월",
+      "families": [
+        "해적"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "046-shade.md"
+    },
+    {
+      "index": 47,
+      "job": "엔젤릭버스터",
+      "families": [
+        "해적"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "047-angelic-buster.md"
+    },
+    {
+      "index": 48,
+      "job": "아크",
+      "families": [
+        "해적"
+      ],
+      "status": "summarized",
+      "evidence_count": 8,
+      "path": "048-ark.md"
+    }
+  ]
+}
