@@ -4,11 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import math
-import os
 import random
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
-from importlib import import_module
 from time import perf_counter
 from typing import Any, ClassVar, Protocol, cast
 from urllib.parse import urlparse
@@ -53,34 +51,6 @@ class RerankerSpec:
     def validate(self) -> None:
         if self.model != "BAAI/bge-reranker-v2-m3" or not self.model_commit:
             raise ValueError("BGE reranker model and immutable commit are required")
-
-
-class SentenceTransformerReranker:
-    """Optional local BGE reranker adapter with an immutable, offline model revision."""
-
-    def __init__(self, spec: RerankerSpec) -> None:
-        spec.validate()
-        os.environ["HF_HUB_OFFLINE"] = "1"
-        os.environ["TRANSFORMERS_OFFLINE"] = "1"
-        try:
-            module = import_module("sentence_transformers")
-        except ImportError as exc:  # pragma: no cover - optional production dependency
-            raise RuntimeError("install the 'ml' optional dependency for local reranking") from exc
-        self.spec = spec
-        cross_encoder: Any = module.CrossEncoder
-        self._model: Any = cross_encoder(
-            spec.model,
-            revision=spec.model_commit,
-            local_files_only=True,
-        )
-
-    async def score(self, query: str, documents: list[str]) -> list[float]:
-        if not documents:
-            return []
-        pairs = [[query, document] for document in documents]
-        scores = await asyncio.to_thread(self._model.predict, pairs)
-        values = scores.tolist() if hasattr(scores, "tolist") else scores
-        return [float(value) for value in values]
 
 
 class RemoteReranker:

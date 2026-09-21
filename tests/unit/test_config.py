@@ -34,7 +34,7 @@ def test_required_settings_load_without_exposing_secrets() -> None:
     assert settings.llm_base_url == "http://127.0.0.1:8001/v1"
     assert settings.llm_model == "local-coder"
     assert settings.embedding_device == "auto"
-    assert settings.embedding_provider == "local"
+    assert settings.embedding_provider == "remote"
     assert settings.embedding_base_url == "http://127.0.0.1:8081/v1"
     assert settings.embedding_remote_model == "bge-m3"
     assert settings.nexon_api_key is None
@@ -220,13 +220,9 @@ def test_bot_role_requires_remote_reranker() -> None:
     without_provider = {
         key: value for key, value in VALID_ENV.items() if key != "RERANKER_PROVIDER"
     }
-    with (
-        patch.dict(os.environ, without_provider, clear=True),
-        pytest.raises(ConfigurationError) as raised,
-    ):
-        load_settings()
-    assert "RERANKER_PROVIDER" in str(raised.value)
-    assert "pii-secret-canary" not in str(raised.value)
+    with patch.dict(os.environ, without_provider, clear=True):
+        settings = load_settings()
+    assert settings.reranker_provider == "remote"
 
     with (
         patch.dict(os.environ, VALID_ENV | {"RERANKER_PROVIDER": "local"}, clear=True),
@@ -234,9 +230,22 @@ def test_bot_role_requires_remote_reranker() -> None:
     ):
         load_settings()
     assert "RERANKER_PROVIDER" in str(raised.value)
+    assert "pii-secret-canary" not in str(raised.value)
 
 
-def test_non_bot_roles_may_still_select_the_local_reranker() -> None:
-    with patch.dict(os.environ, VALID_ENV | {"RERANKER_PROVIDER": "local"}, clear=True):
-        settings = Settings(role=ProcessRole.SCHEDULER)
-    assert settings.reranker_provider == "local"
+def test_every_process_role_rejects_local_providers() -> None:
+    for role in ProcessRole:
+        with (
+            patch.dict(os.environ, VALID_ENV | {"RERANKER_PROVIDER": "local"}, clear=True),
+            pytest.raises(ConfigurationError) as raised,
+        ):
+            load_settings(role)
+        assert "RERANKER_PROVIDER" in str(raised.value)
+        assert "pii-secret-canary" not in str(raised.value)
+        with (
+            patch.dict(os.environ, VALID_ENV | {"EMBEDDING_PROVIDER": "local"}, clear=True),
+            pytest.raises(ConfigurationError) as raised,
+        ):
+            load_settings(role)
+        assert "EMBEDDING_PROVIDER" in str(raised.value)
+        assert "pii-secret-canary" not in str(raised.value)

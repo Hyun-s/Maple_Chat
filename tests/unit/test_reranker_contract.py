@@ -237,10 +237,6 @@ def test_remote_reranker_requires_pinned_spec_and_served_model() -> None:
 def test_build_reranker_selects_provider(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[str] = []
 
-    def build_local(spec: RerankerSpec) -> SimpleNamespace:
-        calls.append("local")
-        return SimpleNamespace(spec=spec)
-
     def build_remote(
         spec: RerankerSpec,
         *,
@@ -256,7 +252,6 @@ def test_build_reranker_selects_provider(monkeypatch: pytest.MonkeyPatch) -> Non
             timeout_seconds=timeout_seconds,
         )
 
-    monkeypatch.setattr(runtime, "SentenceTransformerReranker", build_local)
     monkeypatch.setattr(runtime, "RemoteReranker", build_remote)
     settings = SimpleNamespace(
         reranker_provider="remote",
@@ -277,8 +272,9 @@ def test_build_reranker_selects_provider(monkeypatch: pytest.MonkeyPatch) -> Non
         reranker_model="BAAI/bge-reranker-v2-m3",
         reranker_model_commit="commit-1",
     )
-    runtime.build_reranker(settings2)  # type: ignore[arg-type]
-    assert calls == ["remote", "local"]
+    with pytest.raises(ValueError, match="RERANKER_PROVIDER"):
+        runtime.build_reranker(settings2)  # type: ignore[arg-type]
+    assert calls == ["remote"]
 
 
 def test_settings_validate_remote_reranker_boundary() -> None:

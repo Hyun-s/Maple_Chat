@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import asyncio
 import math
-import os
 from dataclasses import dataclass
-from importlib import import_module
 from typing import Any, ClassVar, Protocol, cast
 from urllib.parse import urlparse
 
@@ -41,44 +38,6 @@ class EmbeddingProvider(Protocol):
     async def embed(self, texts: list[str]) -> list[list[float]]: ...
 
     async def aclose(self) -> None: ...
-
-
-class SentenceTransformerEmbeddingProvider:
-    """Optional local BGE-M3 adapter; model loading is explicit and never cloud-backed."""
-
-    def __init__(self, spec: EmbeddingSpec, *, device: str = "auto") -> None:
-        spec.validate()
-        os.environ["HF_HUB_OFFLINE"] = "1"
-        os.environ["TRANSFORMERS_OFFLINE"] = "1"
-        if device not in {"auto", "cpu", "cuda"}:
-            raise ValueError("embedding device must be auto, cpu, or cuda")
-        if device == "cuda":
-            torch = import_module("torch")
-            if not torch.cuda.is_available():
-                raise RuntimeError("CUDA is required for the configured embedding device")
-        try:
-            module = import_module("sentence_transformers")
-        except ImportError as exc:  # pragma: no cover - optional production dependency
-            raise RuntimeError("install the 'ml' optional dependency for local embeddings") from exc
-        self.spec = spec
-        transformer: Any = module.SentenceTransformer
-        self._model: Any = transformer(
-            spec.model,
-            revision=spec.model_commit,
-            local_files_only=True,
-            device=None if device == "auto" else device,
-        )
-
-    async def embed(self, texts: list[str]) -> list[list[float]]:
-        vectors = await asyncio.to_thread(
-            self._model.encode,
-            texts,
-            normalize_embeddings=True,
-        )
-        return cast(list[list[float]], vectors.tolist())
-
-    async def aclose(self) -> None:
-        """Match the provider lifecycle contract without owning network resources."""
 
 
 class RemoteEmbeddingProvider:

@@ -85,7 +85,7 @@ class Settings(BaseSettings):
         validation_alias="EMBEDDING_MODEL",
     )
     embedding_provider: Literal["local", "remote"] = Field(
-        default="local",
+        default="remote",
         validation_alias="EMBEDDING_PROVIDER",
     )
     embedding_base_url: str = Field(
@@ -113,7 +113,7 @@ class Settings(BaseSettings):
         validation_alias="RERANKER_MODEL",
     )
     reranker_provider: Literal["local", "remote"] = Field(
-        default="local",
+        default="remote",
         validation_alias="RERANKER_PROVIDER",
     )
     reranker_base_url: str = Field(
@@ -261,10 +261,18 @@ class Settings(BaseSettings):
         ):
             raise ValueError("RERANKER_BASE_URL must target the approved local model boundary")
 
-        if self.role is ProcessRole.BOT and self.reranker_provider != "remote":
+        # Every process role (bot, scheduler, crawler-worker, index-worker) must use the
+        # GPU-backed sidecars: the daily bulk reindex re-created the CPU flood whenever a
+        # role defaulted to the in-process local models.
+        if self.reranker_provider != "remote":
             raise ValueError(
-                "RERANKER_PROVIDER=remote is required for the bot role; the in-process local "
-                "cross-encoder silently adds CPU rerank latency to every answer"
+                f"RERANKER_PROVIDER=remote is required for the {self.role} role; the in-process "
+                "local cross-encoder silently adds CPU rerank latency to every answer"
+            )
+        if self.embedding_provider != "remote":
+            raise ValueError(
+                f"EMBEDDING_PROVIDER=remote is required for the {self.role} role; the in-process "
+                "local BGE-M3 model silently saturates CPU during bulk reindex"
             )
 
         if self.live_crawl_enabled and self.live_crawl_approval_file is None:

@@ -7,14 +7,8 @@ import httpx
 import pytest
 
 from maple_chat import runtime
-from maple_chat.indexing import embedding
-from maple_chat.indexing.embedding import (
-    EmbeddingSpec,
-    RemoteEmbeddingProvider,
-    SentenceTransformerEmbeddingProvider,
-)
-from maple_chat.retrieval import hybrid
-from maple_chat.retrieval.hybrid import RerankerSpec, SentenceTransformerReranker
+from maple_chat.indexing.embedding import EmbeddingSpec, RemoteEmbeddingProvider
+from maple_chat.retrieval.hybrid import RerankerSpec
 
 
 def test_embedding_contract_requires_pinned_compatible_bge_m3() -> None:
@@ -590,19 +584,13 @@ def test_remote_embedding_provider_rejects_nonlocal_endpoint() -> None:
 
 def test_embedding_provider_selection_is_explicit(monkeypatch: pytest.MonkeyPatch) -> None:
     remote_provider = object()
-    local_provider = object()
     calls: list[tuple[str, object, dict[str, object]]] = []
 
     def build_remote(spec: EmbeddingSpec, **kwargs: object) -> object:
         calls.append(("remote", spec, kwargs))
         return remote_provider
 
-    def build_local(spec: EmbeddingSpec, **kwargs: object) -> object:
-        calls.append(("local", spec, kwargs))
-        return local_provider
-
     monkeypatch.setattr(runtime, "RemoteEmbeddingProvider", build_remote)
-    monkeypatch.setattr(runtime, "SentenceTransformerEmbeddingProvider", build_local)
     settings = SimpleNamespace(
         embedding_provider="remote",
         embedding_model="BAAI/bge-m3",
@@ -622,26 +610,18 @@ def test_embedding_provider_selection_is_explicit(monkeypatch: pytest.MonkeyPatc
     }
 
     settings.embedding_provider = "local"
-    assert runtime.build_embedding_provider(settings) is local_provider
-    assert [call[0] for call in calls] == ["remote", "local"]
-    assert calls[1][2] == {"device": "cpu"}
+    with pytest.raises(ValueError, match="EMBEDDING_PROVIDER"):
+        runtime.build_embedding_provider(settings)
+    assert [call[0] for call in calls] == ["remote"]
 
 
 def test_remote_provider_construction_failure_never_falls_back(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    local_calls = 0
-
     def fail_remote(spec: EmbeddingSpec, **kwargs: object) -> object:
         raise RuntimeError("remote unavailable")
 
-    def build_local(spec: EmbeddingSpec, **kwargs: object) -> object:
-        nonlocal local_calls
-        local_calls += 1
-        return object()
-
     monkeypatch.setattr(runtime, "RemoteEmbeddingProvider", fail_remote)
-    monkeypatch.setattr(runtime, "SentenceTransformerEmbeddingProvider", build_local)
     settings = SimpleNamespace(
         embedding_provider="remote",
         embedding_model="BAAI/bge-m3",
@@ -654,48 +634,6 @@ def test_remote_provider_construction_failure_never_falls_back(
 
     with pytest.raises(RuntimeError, match="remote unavailable"):
         runtime.build_embedding_provider(settings)
-    assert local_calls == 0
-
-
-@pytest.mark.asyncio
-async def test_local_reranker_is_pinned_offline_and_preserves_score_order(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.delenv("HF_HUB_OFFLINE", raising=False)
-    monkeypatch.delenv("TRANSFORMERS_OFFLINE", raising=False)
-    calls: dict[str, object] = {}
-
-    class Scores:
-        def tolist(self) -> list[float]:
-            return [0.75, -0.25]
-
-    class CrossEncoder:
-        def __init__(self, model: str, **kwargs: object) -> None:
-            calls["model"] = model
-            calls["kwargs"] = kwargs
-
-        def predict(self, pairs: list[list[str]]) -> Scores:
-            calls["pairs"] = pairs
-            return Scores()
-
-    class Module:
-        pass
-
-    module = Module()
-    module.CrossEncoder = CrossEncoder  # type: ignore[attr-defined]
-    monkeypatch.setattr(hybrid, "import_module", lambda _: module)
-
-    reranker = SentenceTransformerReranker(
-        RerankerSpec("BAAI/bge-reranker-v2-m3", "immutable-commit")
-    )
-    assert await reranker.score("질문", ["문서 1", "문서 2"]) == [0.75, -0.25]
-    assert calls == {
-        "model": "BAAI/bge-reranker-v2-m3",
-        "kwargs": {"revision": "immutable-commit", "local_files_only": True},
-        "pairs": [["질문", "문서 1"], ["질문", "문서 2"]],
-    }
-    assert hybrid.os.environ["HF_HUB_OFFLINE"] == "1"
-    assert hybrid.os.environ["TRANSFORMERS_OFFLINE"] == "1"
 
 
 def test_reranker_contract_rejects_unpinned_or_wrong_model() -> None:
@@ -703,66 +641,3 @@ def test_reranker_contract_rejects_unpinned_or_wrong_model() -> None:
         RerankerSpec("BAAI/bge-reranker-v2-m3", "").validate()
     with pytest.raises(ValueError, match="BGE"):
         RerankerSpec("other", "commit").validate()
-
-
-def test_cuda_embedding_device_is_required_and_forwarded(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.delenv("HF_HUB_OFFLINE", raising=False)
-    monkeypatch.delenv("TRANSFORMERS_OFFLINE", raising=False)
-    calls: dict[str, object] = {}
-
-    class Cuda:
-        @staticmethod
-        def is_available() -> bool:
-            return True
-
-    class TorchModule:
-        cuda = Cuda()
-
-    class SentenceTransformer:
-        def __init__(self, model: str, **kwargs: object) -> None:
-            calls["model"] = model
-            calls["kwargs"] = kwargs
-
-    class SentenceModule:
-        pass
-
-    sentence_module = SentenceModule()
-    sentence_module.SentenceTransformer = SentenceTransformer  # type: ignore[attr-defined]
-
-    def import_fake(name: str) -> object:
-        return TorchModule() if name == "torch" else sentence_module
-
-    monkeypatch.setattr(embedding, "import_module", import_fake)
-    spec = EmbeddingSpec("v1", "BAAI/bge-m3", "commit-1")
-    SentenceTransformerEmbeddingProvider(spec, device="cuda")
-
-    assert calls == {
-        "model": "BAAI/bge-m3",
-        "kwargs": {
-            "revision": "commit-1",
-            "local_files_only": True,
-            "device": "cuda",
-        },
-    }
-    assert embedding.os.environ["HF_HUB_OFFLINE"] == "1"
-    assert embedding.os.environ["TRANSFORMERS_OFFLINE"] == "1"
-
-
-def test_cuda_embedding_device_fails_instead_of_silently_using_cpu(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    class Cuda:
-        @staticmethod
-        def is_available() -> bool:
-            return False
-
-    class TorchModule:
-        cuda = Cuda()
-
-    monkeypatch.setattr(embedding, "import_module", lambda _: TorchModule())
-    spec = EmbeddingSpec("v1", "BAAI/bge-m3", "commit-1")
-
-    with pytest.raises(RuntimeError, match="CUDA"):
-        SentenceTransformerEmbeddingProvider(spec, device="cuda")

@@ -26,7 +26,6 @@ from maple_chat.indexing.embedding import (
     EmbeddingProvider,
     EmbeddingSpec,
     RemoteEmbeddingProvider,
-    SentenceTransformerEmbeddingProvider,
 )
 from maple_chat.knowledge.catalog import normalize_alias
 from maple_chat.knowledge.service import (
@@ -49,7 +48,6 @@ from maple_chat.retrieval.hybrid import (
     Reranker,
     RerankerSpec,
     RetrievalResult,
-    SentenceTransformerReranker,
     hybrid_retrieve,
 )
 from maple_chat.retrieval.modes import RAGQueryMode
@@ -68,14 +66,17 @@ def embedding_spec(settings: Settings) -> EmbeddingSpec:
 
 def build_embedding_provider(settings: Settings) -> EmbeddingProvider:
     spec = embedding_spec(settings)
-    if settings.embedding_provider == "remote":
-        return RemoteEmbeddingProvider(
-            spec,
-            base_url=settings.embedding_base_url,
-            served_model=settings.embedding_remote_model,
-            timeout_seconds=settings.embedding_timeout_seconds,
+    if settings.embedding_provider != "remote":
+        raise ValueError(
+            "EMBEDDING_PROVIDER=remote is the only supported provider; the in-process CPU "
+            "BGE-M3 implementation was removed in favour of the TEI embedding sidecar"
         )
-    return SentenceTransformerEmbeddingProvider(spec, device=settings.embedding_device)
+    return RemoteEmbeddingProvider(
+        spec,
+        base_url=settings.embedding_base_url,
+        served_model=settings.embedding_remote_model,
+        timeout_seconds=settings.embedding_timeout_seconds,
+    )
 
 
 def reranker_spec(settings: Settings) -> RerankerSpec:
@@ -84,17 +85,17 @@ def reranker_spec(settings: Settings) -> RerankerSpec:
 
 def build_reranker(settings: Settings) -> Reranker:
     spec = reranker_spec(settings)
-    if settings.reranker_provider == "remote":
-        return RemoteReranker(
-            spec,
-            base_url=settings.reranker_base_url,
-            served_model=settings.reranker_remote_model,
-            timeout_seconds=settings.reranker_timeout_seconds,
+    if settings.reranker_provider != "remote":
+        raise ValueError(
+            "RERANKER_PROVIDER=remote is the only supported provider; the in-process CPU "
+            "cross-encoder was removed in favour of the TEI reranker sidecar"
         )
-    logger.warning(
-        "reranker_provider is not remote: running the BGE cross-encoder in-process on this host",
+    return RemoteReranker(
+        spec,
+        base_url=settings.reranker_base_url,
+        served_model=settings.reranker_remote_model,
+        timeout_seconds=settings.reranker_timeout_seconds,
     )
-    return SentenceTransformerReranker(spec)
 
 
 class DatabaseHybridRetriever:
