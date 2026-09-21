@@ -144,7 +144,14 @@ async def test_bypass_mode_skips_all_retrieval() -> None:
 class _TimedEvidenceRetriever(_EvidenceRetriever):
     async def retrieve(self, query: str, *, use_knowledge_anchors: bool = True) -> RetrievalResult:
         result = await super().retrieve(query, use_knowledge_anchors=use_knowledge_anchors)
-        return replace(result, embedding_seconds=0.5, rerank_seconds=2.25)
+        return replace(
+            result,
+            embedding_seconds=0.5,
+            rerank_seconds=2.25,
+            vector_query_seconds=0.16,
+            lexical_query_seconds=1.12,
+            merge_seconds=0.04,
+        )
 
 
 @pytest.mark.asyncio
@@ -160,6 +167,40 @@ async def test_retrieval_stage_seconds_reach_processing_metrics() -> None:
     assert metrics.retrieval_seconds is not None
     assert metrics.retrieval_seconds > 0.0
     assert metrics.total_seconds >= metrics.retrieval_seconds
+    assert metrics.vector_query_seconds == pytest.approx(0.16)
+    assert metrics.lexical_query_seconds == pytest.approx(1.12)
+    assert metrics.merge_seconds == pytest.approx(0.04)
+    assert metrics.graph_seconds is None
+    assert metrics.persistence_seconds is not None
+    assert metrics.persistence_seconds >= 0.0
+    assert metrics.regeneration_reason is None
+
+
+@pytest.mark.asyncio
+async def test_knowledge_graph_and_regeneration_stages_are_observable() -> None:
+    class _GuessingGenerator(_Generator):
+        async def generate(
+            self, messages: tuple[ChatMessage, ...], *, max_tokens: int = 1024
+        ) -> str:
+            self.calls.append(messages)
+            if len(self.calls) == 1:
+                return "유에(유니온 챔피언)으로 시작합니다."
+            return "근거 기반 답변"
+
+    knowledge = _KnowledgeRetriever()
+    generator = _GuessingGenerator()
+    service = QAService(_EvidenceRetriever(), generator, knowledge_retriever=knowledge)
+
+    outcome = await service.answer(_Session(), _request(RAGQueryMode.MIX))  # type: ignore[arg-type]
+
+    metrics = outcome.metrics
+    assert metrics is not None
+    assert len(generator.calls) == 2
+    assert knowledge.calls
+    assert metrics.graph_seconds is not None
+    assert metrics.graph_seconds >= 0.0
+    assert metrics.regeneration_reason == "canonical_expansion_repair"
+    assert metrics.persistence_seconds is not None
 
 
 @pytest.mark.asyncio
@@ -176,3 +217,6 @@ async def test_bypass_mode_reports_no_retrieval_stage_seconds() -> None:
     assert metrics.embedding_seconds is None
     assert metrics.rerank_seconds is None
     assert metrics.retrieval_seconds is None
+    assert metrics.vector_query_seconds is None
+    assert metrics.lexical_query_seconds is None
+    assert metrics.merge_seconds is None

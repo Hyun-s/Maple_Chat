@@ -230,6 +230,20 @@ class DatabaseAnswerHandler:
                     "retrieval_seconds": (
                         metrics.retrieval_seconds if metrics is not None else None
                     ),
+                    "vector_query_seconds": (
+                        metrics.vector_query_seconds if metrics is not None else None
+                    ),
+                    "lexical_query_seconds": (
+                        metrics.lexical_query_seconds if metrics is not None else None
+                    ),
+                    "merge_seconds": (metrics.merge_seconds if metrics is not None else None),
+                    "graph_seconds": (metrics.graph_seconds if metrics is not None else None),
+                    "persistence_seconds": (
+                        metrics.persistence_seconds if metrics is not None else None
+                    ),
+                    "regeneration_reason": (
+                        metrics.regeneration_reason if metrics is not None else None
+                    ),
                 }
             },
         )

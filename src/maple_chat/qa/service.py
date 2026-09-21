@@ -99,6 +99,12 @@ class AnswerProcessingMetrics:
     embedding_seconds: float | None = None
     retrieval_seconds: float | None = None
     rerank_seconds: float | None = None
+    vector_query_seconds: float | None = None
+    lexical_query_seconds: float | None = None
+    merge_seconds: float | None = None
+    graph_seconds: float | None = None
+    persistence_seconds: float | None = None
+    regeneration_reason: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -243,6 +249,12 @@ def build_processing_metrics(
     embedding_seconds: float | None = None,
     retrieval_seconds: float | None = None,
     rerank_seconds: float | None = None,
+    vector_query_seconds: float | None = None,
+    lexical_query_seconds: float | None = None,
+    merge_seconds: float | None = None,
+    graph_seconds: float | None = None,
+    persistence_seconds: float | None = None,
+    regeneration_reason: str | None = None,
 ) -> AnswerProcessingMetrics:
     combined = GenerationMetrics.combine(generation_metrics)
     if combined is None:
@@ -258,6 +270,12 @@ def build_processing_metrics(
             embedding_seconds=embedding_seconds,
             retrieval_seconds=retrieval_seconds,
             rerank_seconds=rerank_seconds,
+            vector_query_seconds=vector_query_seconds,
+            lexical_query_seconds=lexical_query_seconds,
+            merge_seconds=merge_seconds,
+            graph_seconds=graph_seconds,
+            persistence_seconds=persistence_seconds,
+            regeneration_reason=regeneration_reason,
         )
     return AnswerProcessingMetrics(
         input_tokens=combined.prompt_tokens,
@@ -271,6 +289,12 @@ def build_processing_metrics(
         embedding_seconds=embedding_seconds,
         retrieval_seconds=retrieval_seconds,
         rerank_seconds=rerank_seconds,
+        vector_query_seconds=vector_query_seconds,
+        lexical_query_seconds=lexical_query_seconds,
+        merge_seconds=merge_seconds,
+        graph_seconds=graph_seconds,
+        persistence_seconds=persistence_seconds,
+        regeneration_reason=regeneration_reason,
     )
 
 
@@ -285,14 +309,27 @@ def processing_metrics_footer(metrics: AnswerProcessingMetrics) -> str:
         stages.append(f"증거 검색 합계(임베딩+DB+재정렬) {metrics.retrieval_seconds:.2f}초")
     if metrics.rerank_seconds is not None:
         stages.append(f"재정렬 {metrics.rerank_seconds:.2f}초")
+    if metrics.vector_query_seconds is not None:
+        stages.append(f"벡터 질의 {metrics.vector_query_seconds:.2f}초")
+    if metrics.lexical_query_seconds is not None:
+        stages.append(f"텍스트 질의 {metrics.lexical_query_seconds:.2f}초")
+    if metrics.merge_seconds is not None:
+        stages.append(f"병합 {metrics.merge_seconds:.2f}초")
+    if metrics.graph_seconds is not None:
+        stages.append(f"지식 그래프 {metrics.graph_seconds:.2f}초")
+    if metrics.persistence_seconds is not None:
+        stages.append(f"답변 저장 {metrics.persistence_seconds:.2f}초")
     stage_summary = f"\n검색 단계: {' · '.join(stages)}" if stages else ""
+    regeneration = (
+        f"\n재생성 사유: {metrics.regeneration_reason}" if metrics.regeneration_reason else ""
+    )
     return (
         "---\n"
         f"처리 지표: 입력 {metrics.input_tokens:,} tok · 출력 {metrics.output_tokens:,} tok · "
         f"총 {metrics.total_tokens:,} tok\n"
         f"속도: 입력 {rate(metrics.input_tokens_per_second)} (TTFT 기반) · "
         f"출력 {rate(metrics.output_tokens_per_second)} · 전체 {metrics.total_seconds:.2f}초"
-        f"{stage_summary}"
+        f"{stage_summary}{regeneration}"
     )
 
 
@@ -565,6 +602,12 @@ class QAService:
         embedding_seconds: float | None = None
         retrieval_seconds: float | None = None
         rerank_seconds: float | None = None
+        vector_query_seconds: float | None = None
+        lexical_query_seconds: float | None = None
+        merge_seconds: float | None = None
+        graph_seconds: float | None = None
+        persistence_seconds: float | None = None
+        regeneration_reason: str | None = None
         rag_mode = RAGQueryMode.BYPASS if not request.rag_enabled else request.rag_mode
         plan = query_plan(rag_mode)
         if rag_mode is RAGQueryMode.BYPASS:
@@ -589,8 +632,12 @@ class QAService:
                 retrieval_seconds = time.perf_counter() - retrieval_started_at
                 embedding_seconds = retrieval.embedding_seconds
                 rerank_seconds = retrieval.rerank_seconds
+                vector_query_seconds = retrieval.vector_query_seconds
+                lexical_query_seconds = retrieval.lexical_query_seconds
+                merge_seconds = retrieval.merge_seconds
                 evidence = claim_bearing_evidence(retrieval.evidence)
             if plan.uses_knowledge and self.knowledge_retriever is not None:
+                graph_started_at = time.perf_counter()
                 query_facts = await self.knowledge_retriever.retrieve(
                     request.query, max_hops=plan.graph_hops
                 )
@@ -612,6 +659,7 @@ class QAService:
                         evidence_text, max_hops=1
                     )
                 knowledge_facts = merge_scoped_knowledge_facts(query_facts, evidence_facts)
+                graph_seconds = time.perf_counter() - graph_started_at
             if (retrieval.insufficient_evidence or not evidence) and not knowledge_facts:
                 mode = AnswerMode.INSUFFICIENT_EVIDENCE
                 text = (
@@ -627,6 +675,7 @@ class QAService:
                         generation_metrics.append(metrics)
                     violations = canonical_expansion_violations(text, knowledge_facts)
                     if violations:
+                        regeneration_reason = "canonical_expansion_repair"
                         result = await self.generator.generate(
                             build_canonical_repair_messages(messages, text, violations)
                         )
@@ -647,6 +696,7 @@ class QAService:
                     text = grounded_fallback(evidence, knowledge_facts)
                     mode = AnswerMode.RETRIEVAL_ONLY
 
+        persistence_started_at = time.perf_counter()
         answer_id = str(uuid.uuid4())
         session.add(
             Answer(
@@ -681,12 +731,19 @@ class QAService:
                 )
             )
         await session.flush()
+        persistence_seconds = time.perf_counter() - persistence_started_at
         processing_metrics = build_processing_metrics(
             tuple(generation_metrics),
             total_seconds=time.perf_counter() - started_at,
             embedding_seconds=embedding_seconds,
             retrieval_seconds=retrieval_seconds,
             rerank_seconds=rerank_seconds,
+            vector_query_seconds=vector_query_seconds,
+            lexical_query_seconds=lexical_query_seconds,
+            merge_seconds=merge_seconds,
+            graph_seconds=graph_seconds,
+            persistence_seconds=persistence_seconds,
+            regeneration_reason=regeneration_reason,
         )
         if generation_metrics:
             text = f"{text.rstrip()}\n\n{processing_metrics_footer(processing_metrics)}"
