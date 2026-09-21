@@ -1,0 +1,31 @@
+{
+  "comments": [
+    {
+      "id": 10,
+      "parent_id": null,
+      "author": "fixture-answerer",
+      "body": "질문에 대한 안전한 답변입니다.",
+      "published_at": "2026-08-04T01:00:00Z",
+      "score": 5,
+      "deleted": false
+    },
+    {
+      "id": 11,
+      "parent_id": 10,
+      "author": "fixture-replier",
+      "body": "보충 설명입니다.",
+      "published_at": "2026-08-04T01:10:00Z",
+      "score": 1,
+      "deleted": false
+    },
+    {
+      "id": 12,
+      "parent_id": null,
+      "author": "fixture-deleted",
+      "body": "",
+      "published_at": "2026-08-04T01:20:00Z",
+      "score": 0,
+      "deleted": true
+    }
+  ]
+}
