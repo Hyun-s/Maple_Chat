@@ -1,0 +1,49 @@
+name: quality
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  g001:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          environment-file: environment.yml
+          activate-environment: maple-chat
+          auto-activate-base: false
+      - name: Secret scan
+        run: detect-secrets-hook --baseline .secrets.baseline $(git ls-files)
+      - name: Dependency vulnerability scan
+        run: |
+          python -m pip check
+          pip-audit
+      - name: Dependency license inventory
+        run: pip-licenses --format=markdown --with-urls
+      - name: Lint and formatting
+        run: |
+          ruff check src tests migrations
+          ruff format --check src tests migrations
+      - name: Typecheck
+        run: mypy src
+      - name: Unit tests
+        run: pytest -q tests/unit
+      - name: Compose validation
+        run: docker compose --profile app config --quiet
+      - name: PostgreSQL migrations and durable jobs
+        run: scripts/verify_g002.sh
+      - name: Korean fixture quality gate
+        run: |
+          maple-evaluate \
+            --cases tests/evaluation/korean-rag-v1.jsonl \
+            --predictions tests/evaluation/fixture-predictions-v1.json
+      - name: Temporary database restore drill
+        run: scripts/verify_g007_restore.sh

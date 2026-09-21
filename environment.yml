@@ -1,0 +1,11 @@
+name: maple-chat
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12.13
+  - pip=26.2
+  - tesseract=5.5.3
+  - pip:
+      - torch==2.13.0
+      - -r requirements/lock.txt
+      - -e .[ml,ocr]

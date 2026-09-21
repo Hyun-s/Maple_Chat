@@ -1,0 +1,92 @@
+[build-system]
+requires = ["setuptools==83.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "maple-chat"
+version = "0.1.0"
+description = "Private single-guild Korean MapleStory RAG bot"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { text = "Proprietary" }
+authors = [{ name = "Maple Chat maintainers" }]
+dependencies = [
+  "alembic>=1.16,<2",
+  "asyncpg>=0.30,<1",
+  "discord.py>=2.5,<3",
+  "httpx>=0.28,<1",
+  "pgvector>=0.4,<1",
+  "pydantic>=2.11,<3",
+  "pydantic-settings>=2.10,<3",
+  "SQLAlchemy[asyncio]>=2.0.41,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "detect-secrets>=1.5,<2",
+  "mypy>=1.17,<2",
+  "pip-audit>=2.9,<3",
+  "pip-licenses>=5,<6",
+  "pytest>=9.0.3,<10",
+  "pytest-asyncio>=1.3,<2",
+  "pytest-cov>=6.2,<8",
+  "PyYAML>=6.0.2,<7",
+  "ruff>=0.12,<1",
+]
+ml = ["sentence-transformers>=5,<6"]
+ocr = ["Pillow>=11,<13", "pytesseract>=0.3.13,<1"]
+
+[project.scripts]
+maple-chat = "maple_chat.cli:main"
+maple-evaluate = "maple_chat.evaluation:main"
+maple-post-evaluate = "maple_chat.post_qa_evaluation:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"maple_chat.knowledge.data" = ["*.json"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "S", "PT", "RUF"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S105", "S106"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src"]
+plugins = ["pydantic.mypy"]
+show_error_codes = true
+warn_unreachable = true
+
+[tool.pytest.ini_options]
+minversion = "9.0.3"
+addopts = "-ra --strict-config --strict-markers"
+testpaths = ["tests/unit"]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+branch = true
+source = ["maple_chat"]
+omit = [
+  "src/maple_chat/__main__.py",
+  "src/maple_chat/cli.py",
+  "src/maple_chat/crawler/live.py",
+  "src/maple_chat/discord/runtime.py",
+  "src/maple_chat/runtime.py",
+]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true

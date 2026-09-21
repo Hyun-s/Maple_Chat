@@ -1,0 +1,114 @@
+x-app-service: &app-service
+  build:
+    context: .
+    dockerfile: docker/app.Dockerfile
+  image: maple-chat-app:local
+  user: "10001:10001"
+  read_only: true
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  init: true
+  restart: "no"
+  profiles:
+    - app
+  depends_on:
+    postgres:
+      condition: service_healthy
+  networks:
+    - data-plane
+    - app-egress
+    - dcm-model-plane
+  extra_hosts:
+    - host.docker.internal:host-gateway
+  environment: &common-environment
+    DATABASE_URL: "${DATABASE_URL:-}"
+    LLM_BASE_URL: "${LLM_BASE_URL:-http://host.docker.internal:8001/v1}"
+    LLM_MODEL: "${LLM_MODEL:-local-coder}"
+    LLM_TIMEOUT_SECONDS: "${LLM_TIMEOUT_SECONDS:-60}"
+    EMBEDDING_MODEL: "${EMBEDDING_MODEL:-BAAI/bge-m3}"
+    EMBEDDING_PROVIDER: "${EMBEDDING_PROVIDER:-local}"
+    EMBEDDING_BASE_URL: "${EMBEDDING_BASE_URL:-http://dcm-embedding:80/v1}"
+    EMBEDDING_REMOTE_MODEL: "${EMBEDDING_REMOTE_MODEL:-bge-m3}"
+    EMBEDDING_TIMEOUT_SECONDS: "${EMBEDDING_TIMEOUT_SECONDS:-60}"
+    EMBEDDING_DEVICE: "${EMBEDDING_DEVICE:-auto}"
+    EMBEDDING_MODEL_COMMIT: "${EMBEDDING_MODEL_COMMIT:-5617a9f61b028005a4858fdac845db406aefb181}"
+    RERANKER_MODEL: "${RERANKER_MODEL:-BAAI/bge-reranker-v2-m3}"
+    LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.0-pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: maple_chat
+      POSTGRES_USER: maple_chat
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - data-plane
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
+
+  bot:
+    <<: *app-service
+    command: ["validate-config", "--role", "bot"]
+    environment:
+      <<: *common-environment
+      DISCORD_TOKEN: "${DISCORD_TOKEN:-}"
+      DISCORD_GUILD_ID: "${DISCORD_GUILD_ID:-}"
+      DISCORD_GUILD_IDS: "${DISCORD_GUILD_IDS:-}"
+      DISCORD_OWNER_ID: "${DISCORD_OWNER_ID:-}"
+      PII_HASH_SALT: "${PII_HASH_SALT:-}"
+      NEXON_API_KEY: "${NEXON_API_KEY:-}"
+      AGENT_MAX_TOOL_CALLS: "${AGENT_MAX_TOOL_CALLS:-4}"
+
+  scheduler:
+    <<: *app-service
+    command: ["validate-config", "--role", "scheduler"]
+    environment:
+      <<: *common-environment
+      CRAWL_DAILY_AT: "${CRAWL_DAILY_AT:-04:00}"
+
+  crawler-worker:
+    <<: *app-service
+    command: ["validate-config", "--role", "crawler-worker"]
+    environment:
+      <<: *common-environment
+      PII_HASH_SALT: "${PII_HASH_SALT:-}"
+      CRAWLER_USER_AGENT: "${CRAWLER_USER_AGENT:-}"
+      CRAWLER_CONTACT: "${CRAWLER_CONTACT:-}"
+      LIVE_CRAWL_ENABLED: "${LIVE_CRAWL_ENABLED:-false}"
+      LIVE_CRAWL_APPROVAL_FILE: "${LIVE_CRAWL_APPROVAL_FILE:-}"
+      FIXTURE_ROOT: /app/tests/fixtures/inven
+    volumes:
+      - ./tests/fixtures/inven:/app/tests/fixtures/inven:ro
+
+  index-worker:
+    <<: *app-service
+    command: ["validate-config", "--role", "index-worker"]
+    environment:
+      <<: *common-environment
+      PII_HASH_SALT: "${PII_HASH_SALT:-}"
+
+networks:
+  data-plane:
+    internal: true
+  app-egress: {}
+  dcm-model-plane:
+    external: true
+    name: dcm-model-plane
+
+volumes:
+  postgres-data: {}

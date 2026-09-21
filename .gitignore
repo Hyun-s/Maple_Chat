@@ -1,0 +1,36 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+compliance/evidence/
+
+# Python and test artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.coverage
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+coverage.xml
+htmlcov/
+build/
+dist/
+
+# Conda and editor state
+.conda/
+.venv/
+.idea/
+.vscode/
+
+# Local data and OMX runtime artifacts
+data/
+.omx/
+backups/
+logs/
+
+# Separate git repository with its own GitHub remote (Hyun-s/Maple_chat_site)
+Maple_chat_site/
+
+# Git mergetool leftovers
+*.orig
