@@ -37,6 +37,9 @@ class RetrievalResult:
     insufficient_evidence: bool
     embedding_seconds: float = 0.0
     rerank_seconds: float = 0.0
+    vector_query_seconds: float = 0.0
+    lexical_query_seconds: float = 0.0
+    merge_seconds: float = 0.0
 
 
 class Reranker(Protocol):
@@ -353,11 +356,22 @@ def reciprocal_rank_fusion(
     return sorted(fused, key=lambda item: (-item.fusion_score, item.chunk_id))
 
 
+# pgvector 0.8.0 on PostgreSQL 16.10 with 67,313 active chunks: at the server
+# default ``hnsw.ef_search = 40`` a dense ``LIMIT 1000`` scan leaves the single HNSW
+# pass and crawls iterative top-ups, measured 1.027 s. Pinning ``ef_search = 400``
+# returns that same query to a single pass at 0.156 s, and 1000 only slowed it back
+# down to 0.169 s, so 400 is the pinned depth for the dense candidate sweep.
+_DENSE_EF_SEARCH = 400
+
+
 async def _dense_candidates(
     factory: async_sessionmaker[AsyncSession], query_vector: list[float], limit: int
-) -> list[Candidate]:
+) -> tuple[list[Candidate], float]:
     distance = ChunkEmbedding.embedding.cosine_distance(query_vector).label("distance")
-    async with factory() as session:
+    async with factory() as session, session.begin():
+        # ``SET LOCAL`` rejects bind parameters, so only the pinned literal is interpolated.
+        await session.execute(sa.text(f"SET LOCAL hnsw.ef_search = {_DENSE_EF_SEARCH}"))
+        query_started_at = perf_counter()
         rows = (
             await session.execute(
                 sa.select(Chunk, distance)
@@ -372,23 +386,28 @@ async def _dense_candidates(
                 .limit(limit)
             )
         ).all()
-    return [
-        Candidate(
-            chunk_id=chunk.chunk_id,
-            source_key=chunk.source_key,
-            text=chunk.text,
-            metadata=chunk.metadata_json,
-            dense_score=max(0.0, 1.0 - float(value)),
-        )
-        for chunk, value in rows
-    ]
+        query_seconds = perf_counter() - query_started_at
+    return (
+        [
+            Candidate(
+                chunk_id=chunk.chunk_id,
+                source_key=chunk.source_key,
+                text=chunk.text,
+                metadata=chunk.metadata_json,
+                dense_score=max(0.0, 1.0 - float(value)),
+            )
+            for chunk, value in rows
+        ],
+        query_seconds,
+    )
 
 
 async def _lexical_candidates(
     factory: async_sessionmaker[AsyncSession], query: str, limit: int
-) -> list[Candidate]:
+) -> tuple[list[Candidate], float]:
     similarity = sa.func.similarity(Chunk.text, query).label("similarity")
     async with factory() as session:
+        query_started_at = perf_counter()
         rows = (
             await session.execute(
                 sa.select(Chunk, similarity)
@@ -397,16 +416,20 @@ async def _lexical_candidates(
                 .limit(limit)
             )
         ).all()
-    return [
-        Candidate(
-            chunk_id=chunk.chunk_id,
-            source_key=chunk.source_key,
-            text=chunk.text,
-            metadata=chunk.metadata_json,
-            lexical_score=float(value),
-        )
-        for chunk, value in rows
-    ]
+        query_seconds = perf_counter() - query_started_at
+    return (
+        [
+            Candidate(
+                chunk_id=chunk.chunk_id,
+                source_key=chunk.source_key,
+                text=chunk.text,
+                metadata=chunk.metadata_json,
+                lexical_score=float(value),
+            )
+            for chunk, value in rows
+        ],
+        query_seconds,
+    )
 
 
 async def hybrid_retrieve(
@@ -425,12 +448,13 @@ async def hybrid_retrieve(
 ) -> RetrievalResult:
     if len(query_vector) != 1024:
         raise ValueError("query embedding dimension must be 1024")
-    dense, lexical = await asyncio.gather(
+    (dense, vector_query_seconds), (lexical, lexical_query_seconds) = await asyncio.gather(
         _dense_candidates(factory, query_vector, candidate_limit * 20),
         _lexical_candidates(factory, query, candidate_limit * 4),
     )
     from maple_chat.retrieval.evidence import evidence_group_key, rerank_document
 
+    merge_started_at = perf_counter()
     fused_candidates = reciprocal_rank_fusion(dense, lexical, now=now, anchor_terms=anchor_terms)
     fused: list[Candidate] = []
     group_counts: dict[str, int] = {}
@@ -444,8 +468,15 @@ async def hybrid_retrieve(
         group_counts[group] = group_counts.get(group, 0) + 1
         if len(fused) >= rerank_limit:
             break
+    merge_seconds = perf_counter() - merge_started_at
     if not fused:
-        return RetrievalResult((), True)
+        return RetrievalResult(
+            (),
+            True,
+            vector_query_seconds=vector_query_seconds,
+            lexical_query_seconds=lexical_query_seconds,
+            merge_seconds=merge_seconds,
+        )
     rerank_started_at = perf_counter()
     rerank_scores = await reranker.score(query, [rerank_document(candidate) for candidate in fused])
     rerank_seconds = perf_counter() - rerank_started_at
@@ -472,7 +503,14 @@ async def hybrid_retrieve(
         seen_groups.add(group)
         if len(diverse) >= evidence_limit:
             break
-    return RetrievalResult(tuple(diverse), not diverse, rerank_seconds=rerank_seconds)
+    return RetrievalResult(
+        tuple(diverse),
+        not diverse,
+        rerank_seconds=rerank_seconds,
+        vector_query_seconds=vector_query_seconds,
+        lexical_query_seconds=lexical_query_seconds,
+        merge_seconds=merge_seconds,
+    )
 
 
 def classify_query_hints(query: str) -> dict[str, Any]:

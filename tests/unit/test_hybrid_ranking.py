@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 import pytest
 
+from maple_chat.retrieval import hybrid
 from maple_chat.retrieval.evidence import (
     article_source_key,
     evidence_group_key,
@@ -210,11 +211,11 @@ async def test_hybrid_retrieval_caps_sibling_comments_and_reranks_their_claims(
         dense_score=0.5,
     )
 
-    async def fake_dense(*args: object, **kwargs: object) -> list[Candidate]:
-        return [*sibling_comments, independent]
+    async def fake_dense(*args: object, **kwargs: object) -> tuple[list[Candidate], float]:
+        return [*sibling_comments, independent], 0.4
 
-    async def fake_lexical(*args: object, **kwargs: object) -> list[Candidate]:
-        return []
+    async def fake_lexical(*args: object, **kwargs: object) -> tuple[list[Candidate], float]:
+        return [], 0.3
 
     class ClaimAwareReranker:
         documents: list[str]
@@ -267,11 +268,11 @@ async def test_named_boss_scope_excludes_other_boss_evidence(
         dense_score=0.8,
     )
 
-    async def fake_dense(*args: object, **kwargs: object) -> list[Candidate]:
-        return [wrong_boss, wrong_job, right_boss]
+    async def fake_dense(*args: object, **kwargs: object) -> tuple[list[Candidate], float]:
+        return [wrong_boss, wrong_job, right_boss], 0.4
 
-    async def fake_lexical(*args: object, **kwargs: object) -> list[Candidate]:
-        return []
+    async def fake_lexical(*args: object, **kwargs: object) -> tuple[list[Candidate], float]:
+        return [], 0.3
 
     class Reranker:
         async def score(self, query: str, documents: list[str]) -> list[float]:
@@ -297,17 +298,17 @@ async def test_named_boss_scope_excludes_other_boss_evidence(
 async def test_hybrid_retrieve_reports_rerank_stage_seconds(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    async def fake_dense(*args: object, **kwargs: object) -> list[Candidate]:
-        return [candidate("c1", "article:1", title="제논 하드 메이린 공략")]
+    async def fake_dense(*args: object, **kwargs: object) -> tuple[list[Candidate], float]:
+        return [candidate("c1", "article:1", title="제논 하드 메이린 공략")], 0.4
 
-    async def fake_lexical(*args: object, **kwargs: object) -> list[Candidate]:
-        return []
+    async def fake_lexical(*args: object, **kwargs: object) -> tuple[list[Candidate], float]:
+        return [], 0.3
 
     class ConstantReranker:
         async def score(self, query: str, documents: list[str]) -> list[float]:
             return [0.95] * len(documents)
 
-    ticks = iter([100.0, 103.5])
+    ticks = iter([10.0, 10.25, 100.0, 103.5])
     monkeypatch.setattr("maple_chat.retrieval.hybrid.perf_counter", lambda: next(ticks))
     monkeypatch.setattr("maple_chat.retrieval.hybrid._dense_candidates", fake_dense)
     monkeypatch.setattr("maple_chat.retrieval.hybrid._lexical_candidates", fake_lexical)
@@ -322,3 +323,58 @@ async def test_hybrid_retrieve_reports_rerank_stage_seconds(
 
     assert result.rerank_seconds == pytest.approx(3.5)
     assert result.embedding_seconds == 0.0
+    assert result.vector_query_seconds == pytest.approx(0.4)
+    assert result.lexical_query_seconds == pytest.approx(0.3)
+    assert result.merge_seconds == pytest.approx(0.25)
+
+
+@pytest.mark.asyncio
+async def test_dense_candidates_pin_hnsw_ef_search_before_the_vector_scan() -> None:
+    executed: list[str] = []
+    events: list[str] = []
+
+    class FakeTransaction:
+        def __init__(self, name: str) -> None:
+            self._name = name
+
+        async def __aenter__(self) -> FakeTransaction:
+            events.append(f"{self._name}:enter")
+            return self
+
+        async def __aexit__(self, *exc_info: object) -> bool:
+            events.append(f"{self._name}:exit")
+            return False
+
+    class FakeResult:
+        def all(self) -> list[tuple[object, float]]:
+            return []
+
+    class FakeSession:
+        def begin(self) -> FakeTransaction:
+            return FakeTransaction("transaction")
+
+        async def execute(self, statement: object) -> FakeResult:
+            events.append("execute")
+            executed.append(str(statement))
+            return FakeResult()
+
+        async def __aenter__(self) -> FakeSession:
+            events.append("session:enter")
+            return self
+
+        async def __aexit__(self, *exc_info: object) -> bool:
+            events.append("session:exit")
+            return False
+
+    candidates, query_seconds = await hybrid._dense_candidates(
+        lambda: FakeSession(),  # type: ignore[arg-type]
+        [0.0] * 1024,
+        1000,
+    )
+
+    assert candidates == []
+    assert query_seconds >= 0.0
+    assert events[:4] == ["session:enter", "transaction:enter", "execute", "execute"]
+    assert executed[0] == f"SET LOCAL hnsw.ef_search = {hybrid._DENSE_EF_SEARCH}"
+    assert "<=>" in executed[1]
+    assert "ORDER BY" in executed[1]
