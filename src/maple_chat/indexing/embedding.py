@@ -84,6 +84,12 @@ class SentenceTransformerEmbeddingProvider:
 class RemoteEmbeddingProvider:
     """Approved-local OpenAI-compatible BGE-M3 embedding client."""
 
+    # TEI rejects any embeddings request whose input count exceeds its
+    # --max-client-batch-size with 422, and the indexing path hands this client
+    # every chunk draft of a whole batch (index_chunk_batch -> one embed call),
+    # so a single request is not an option. Shard per request instead.
+    _FALLBACK_MAX_BATCH_SIZE: ClassVar[int] = 32
+
     _ALLOWED_HOSTS: ClassVar[set[str]] = {
         "127.0.0.1",
         "::1",
@@ -117,6 +123,7 @@ class RemoteEmbeddingProvider:
         self.spec = spec
         self._served_model = served_model
         self._info_url = parsed._replace(path="/info").geturl()
+        self._advertised_max_batch_size: int | None = None
         self._owns_client = client is None
         self._client = client or httpx.AsyncClient(
             base_url=f"{base_url.rstrip('/')}/",
@@ -136,11 +143,30 @@ class RemoteEmbeddingProvider:
             raise RuntimeError("embedding service /info model_id does not match")
         if payload.get("model_sha") != self.spec.model_commit:
             raise RuntimeError("embedding service /info model_sha does not match")
+        advertised = payload.get("max_client_batch_size")
+        if isinstance(advertised, int) and not isinstance(advertised, bool) and advertised > 0:
+            self._advertised_max_batch_size = advertised
 
     async def embed(self, texts: list[str]) -> list[list[float]]:
+        """Embed every text, sharded into service-sized windows.
+
+        Attestation still happens once per ``embed`` call, matching the existing
+        per-batch re-attestation contract; only the HTTP request is sharded.
+        """
         if not texts:
             return []
         await self._attest_model()
+        vectors: list[list[float]] = []
+        for start in range(0, len(texts), self._max_batch_size()):
+            vectors.extend(await self._embed_window(texts[start : start + self._max_batch_size()]))
+        return vectors
+
+    def _max_batch_size(self) -> int:
+        if self._advertised_max_batch_size is None:
+            return self._FALLBACK_MAX_BATCH_SIZE
+        return max(1, min(self._advertised_max_batch_size, self._FALLBACK_MAX_BATCH_SIZE))
+
+    async def _embed_window(self, texts: list[str]) -> list[list[float]]:
         response = await self._client.post(
             "embeddings",
             json={

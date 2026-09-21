@@ -163,6 +163,138 @@ async def test_remote_embedding_provider_rechecks_tei_attestation_per_batch() ->
     ]
 
 
+def _unit_vector(slot: int) -> list[float]:
+    vector = [0.0] * 1024
+    vector[slot] = 1.0
+    return vector
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("advertised_cap", "expected_sizes"),
+    [
+        # TEI advertises more than the client may safely send: clamp to 32.
+        (64, [32, 32, 6]),
+        # TEI advertises a tighter cap than our ceiling: honour the service.
+        (16, [16, 16, 16, 16, 6]),
+    ],
+)
+async def test_remote_embedding_provider_shards_requests_within_service_batch_cap(
+    advertised_cap: int,
+    expected_sizes: list[int],
+) -> None:
+    """Indexing hands one ``embed`` call every chunk draft of a whole batch.
+
+    TEI answers 422 once a request carries more inputs than its
+    ``--max-client-batch-size``, so the client must shard while keeping the
+    flattened vector order identical to the input order.
+    """
+    assert sum(expected_sizes) == 70
+
+    batches: list[list[str]] = []
+    targets: list[tuple[str, str]] = []
+    emitted = 0
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal emitted
+        targets.append((request.method, request.url.path))
+        if request.url.path == "/info":
+            return httpx.Response(
+                200,
+                json={
+                    "model_id": "BAAI/bge-m3",
+                    "model_sha": "commit-1",
+                    "max_client_batch_size": advertised_cap,
+                },
+            )
+        payload = json.loads(request.content)
+        assert payload["model"] == "bge-m3"
+        assert payload["encoding_format"] == "float"
+        inputs = list(payload["input"])
+        batches.append(inputs)
+        offset = emitted
+        emitted += len(inputs)
+        # Reply out of order inside the window to prove index reordering holds.
+        data = [
+            {
+                "object": "embedding",
+                "index": position,
+                "embedding": _unit_vector(offset + position),
+            }
+            for position in reversed(range(len(inputs)))
+        ]
+        return httpx.Response(200, json={"object": "list", "model": "bge-m3", "data": data})
+
+    texts = [f"chunk-{index}" for index in range(70)]
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler),
+        base_url="http://127.0.0.1:8081/v1/",
+    ) as client:
+        provider = RemoteEmbeddingProvider(
+            EmbeddingSpec("v1", "BAAI/bge-m3", "commit-1"),
+            base_url="http://127.0.0.1:8081/v1",
+            served_model="bge-m3",
+            timeout_seconds=10,
+            client=client,
+        )
+        vectors = await provider.embed(texts)
+        await provider.aclose()
+
+    assert [len(batch) for batch in batches] == expected_sizes
+    cursor = 0
+    for batch, size in zip(batches, expected_sizes, strict=True):
+        assert batch == texts[cursor : cursor + size]
+        cursor += size
+    assert cursor == len(texts)
+    # One attestation per embed() call, never one per shard.
+    assert targets.count(("GET", "/info")) == 1
+    assert targets.count(("POST", "/v1/embeddings")) == len(expected_sizes)
+    assert vectors == [_unit_vector(index) for index in range(70)]
+
+
+@pytest.mark.asyncio
+async def test_remote_embedding_provider_shards_without_advertised_capability() -> None:
+    """Older TEI /info payloads omit the cap; the safe ceiling still applies."""
+    batch_sizes: list[int] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/info":
+            return httpx.Response(
+                200,
+                json={"model_id": "BAAI/bge-m3", "model_sha": "commit-1"},
+            )
+        inputs = list(json.loads(request.content)["input"])
+        batch_sizes.append(len(inputs))
+        return httpx.Response(
+            200,
+            json={
+                "model": "bge-m3",
+                "data": [
+                    {"object": "embedding", "index": index, "embedding": _unit_vector(index)}
+                    for index in range(len(inputs))
+                ],
+            },
+        )
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler),
+        base_url="http://127.0.0.1:8081/v1/",
+    ) as client:
+        provider = RemoteEmbeddingProvider(
+            EmbeddingSpec("v1", "BAAI/bge-m3", "commit-1"),
+            base_url="http://127.0.0.1:8081/v1",
+            served_model="bge-m3",
+            timeout_seconds=10,
+            client=client,
+        )
+        vectors = await provider.embed([f"chunk-{index}" for index in range(33)])
+        await provider.aclose()
+
+    assert batch_sizes == [32, 1]
+    assert len(vectors) == 33
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("response_patch", "error"),
