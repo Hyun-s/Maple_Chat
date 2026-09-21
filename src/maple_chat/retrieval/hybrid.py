@@ -6,6 +6,7 @@ import asyncio
 import math
 import os
 import random
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from importlib import import_module
@@ -80,6 +81,25 @@ class SentenceTransformerReranker:
         return [float(value) for value in values]
 
 
+_RERANK_TOKENIZER_CACHE: dict[tuple[str, str], Any] = {}
+
+
+def _load_rerank_tokenizer(model: str, revision: str) -> Any:
+    """Load the pinned tokenizer offline for client-side document truncation."""
+
+    cached = _RERANK_TOKENIZER_CACHE.get((model, revision))
+    if cached is not None:
+        return cached
+    os.environ["HF_HUB_OFFLINE"] = "1"
+    os.environ["TRANSFORMERS_OFFLINE"] = "1"
+    module = import_module("transformers")
+    tokenizer = module.AutoTokenizer.from_pretrained(
+        model, revision=revision, local_files_only=True
+    )
+    _RERANK_TOKENIZER_CACHE[(model, revision)] = tokenizer
+    return tokenizer
+
+
 class RemoteReranker:
     """Approved-local always-on BGE-reranker-v2-m3 HTTP client (TEI/vLLM compatible).
 
@@ -100,6 +120,12 @@ class RemoteReranker:
     _BACKOFF_BASE_SECONDS: ClassVar[float] = 0.25
     _BACKOFF_CAP_SECONDS: ClassVar[float] = 2.0
     _RETRYABLE_STATUS_CODES: ClassVar[frozenset[int]] = frozenset({429, 503})
+    # bge-reranker-v2-m3 caps sequences at 512 learned positions. TEI encodes the
+    # pair as [CLS] query [SEP] document [SEP] (3 special tokens) and only
+    # truncates at its own max_input_length (8192), so long documents are billed
+    # for positions the model cannot attend to. 480 keeps the document plus a
+    # typical short query (measured 14-29 tokens) inside the 512-position window.
+    _MAX_RERANK_DOCUMENT_TOKENS: ClassVar[int] = 480
 
     def __init__(
         self,
@@ -109,6 +135,7 @@ class RemoteReranker:
         served_model: str,
         timeout_seconds: float,
         client: httpx.AsyncClient | None = None,
+        tokenizer_loader: Callable[[], Any] | None = None,
     ) -> None:
         spec.validate()
         if not served_model.strip():
@@ -135,6 +162,11 @@ class RemoteReranker:
         )
         self._attestation_lock = asyncio.Lock()
         self._attested = False
+        self._tokenizer_loader = tokenizer_loader or (
+            lambda: _load_rerank_tokenizer(spec.model, spec.model_commit)
+        )
+        self._tokenizer: Any = None
+        self._tokenizer_unavailable = False
 
     async def _request_with_retry(
         self,
@@ -202,17 +234,41 @@ class RemoteReranker:
                 raise RuntimeError("reranker service /info model_sha does not match")
             self._attested = True
 
+    def _truncate_documents(self, documents: list[str]) -> list[str]:
+        if self._tokenizer_unavailable:
+            return documents
+        tokenizer = self._tokenizer
+        if tokenizer is None:
+            try:
+                tokenizer = self._tokenizer_loader()
+            except Exception:  # truncation is a latency-only optimization; degrade untruncated
+                self._tokenizer_unavailable = True
+                return documents
+            self._tokenizer = tokenizer
+        max_tokens = self._MAX_RERANK_DOCUMENT_TOKENS
+        truncated: list[str] = []
+        for document in documents:
+            encoded = tokenizer(
+                document,
+                truncation=True,
+                max_length=max_tokens,
+                add_special_tokens=False,
+            )
+            truncated.append(tokenizer.decode(encoded["input_ids"]))
+        return truncated
+
     async def score(self, query: str, documents: list[str]) -> list[float]:
         if not documents:
             return []
         await self._ensure_attested()
+        texts = await asyncio.to_thread(self._truncate_documents, documents)
         response = await self._request_with_retry(
             "POST",
             self._rerank_url,
             json_body={
                 "model": self._served_model,
                 "query": query,
-                "texts": documents,
+                "texts": texts,
             },
         )
         response.raise_for_status()
