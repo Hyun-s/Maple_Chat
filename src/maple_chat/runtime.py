@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import time
+from dataclasses import replace
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert
@@ -89,6 +91,9 @@ def build_reranker(settings: Settings) -> Reranker:
             served_model=settings.reranker_remote_model,
             timeout_seconds=settings.reranker_timeout_seconds,
         )
+    logger.warning(
+        "reranker_provider is not remote: running the BGE cross-encoder in-process on this host",
+    )
     return SentenceTransformerReranker(spec)
 
 
@@ -107,6 +112,7 @@ class DatabaseHybridRetriever:
 
     async def retrieve(self, query: str, *, use_knowledge_anchors: bool = True) -> RetrievalResult:
         facts: tuple[KnowledgeFact, ...]
+        embedding_started_at = time.perf_counter()
         if self.knowledge_retriever is None or not use_knowledge_anchors:
             vectors = await self.embedding.embed([query])
             facts = ()
@@ -115,6 +121,7 @@ class DatabaseHybridRetriever:
             vectors = await self.embedding.embed([query])
         if len(vectors) != 1:
             raise RuntimeError("query embedding provider returned an invalid batch")
+        embedding_seconds = time.perf_counter() - embedding_started_at
         normalized_query = normalize_alias(query)
         anchor_terms = tuple(
             dict.fromkeys(
@@ -141,7 +148,7 @@ class DatabaseHybridRetriever:
                 )
             )
         )
-        return await hybrid_retrieve(
+        result = await hybrid_retrieve(
             self.factory,
             query=query,
             query_vector=vectors[0],
@@ -150,6 +157,7 @@ class DatabaseHybridRetriever:
             anchor_terms=anchor_terms,
             required_scope_groups=required_scope_groups,
         )
+        return replace(result, embedding_seconds=embedding_seconds)
 
 
 class DatabaseAnswerHandler:
@@ -214,6 +222,13 @@ class DatabaseAnswerHandler:
                     "model_seconds": metrics.model_seconds if metrics is not None else 0.0,
                     "total_seconds": metrics.total_seconds if metrics is not None else 0.0,
                     "model_calls": metrics.model_calls if metrics is not None else 0,
+                    "embedding_seconds": (
+                        metrics.embedding_seconds if metrics is not None else None
+                    ),
+                    "rerank_seconds": (metrics.rerank_seconds if metrics is not None else None),
+                    "retrieval_seconds": (
+                        metrics.retrieval_seconds if metrics is not None else None
+                    ),
                 }
             },
         )

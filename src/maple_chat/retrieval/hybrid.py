@@ -9,6 +9,7 @@ import random
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from importlib import import_module
+from time import perf_counter
 from typing import Any, ClassVar, Protocol, cast
 from urllib.parse import urlparse
 
@@ -36,6 +37,8 @@ class Candidate:
 class RetrievalResult:
     evidence: tuple[Candidate, ...]
     insufficient_evidence: bool
+    embedding_seconds: float = 0.0
+    rerank_seconds: float = 0.0
 
 
 class Reranker(Protocol):
@@ -473,7 +476,9 @@ async def hybrid_retrieve(
             break
     if not fused:
         return RetrievalResult((), True)
+    rerank_started_at = perf_counter()
     rerank_scores = await reranker.score(query, [rerank_document(candidate) for candidate in fused])
+    rerank_seconds = perf_counter() - rerank_started_at
     if len(rerank_scores) != len(fused):
         raise ValueError("reranker returned the wrong score count")
     reranked = sorted(
@@ -497,7 +502,7 @@ async def hybrid_retrieve(
         seen_groups.add(group)
         if len(diverse) >= evidence_limit:
             break
-    return RetrievalResult(tuple(diverse), not diverse)
+    return RetrievalResult(tuple(diverse), not diverse, rerank_seconds=rerank_seconds)
 
 
 def classify_query_hints(query: str) -> dict[str, Any]:

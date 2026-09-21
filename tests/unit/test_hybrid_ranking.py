@@ -291,3 +291,34 @@ async def test_named_boss_scope_excludes_other_boss_evidence(
     )
 
     assert [item.chunk_id for item in result.evidence] == ["bellona"]
+
+
+@pytest.mark.asyncio
+async def test_hybrid_retrieve_reports_rerank_stage_seconds(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def fake_dense(*args: object, **kwargs: object) -> list[Candidate]:
+        return [candidate("c1", "article:1", title="제논 하드 메이린 공략")]
+
+    async def fake_lexical(*args: object, **kwargs: object) -> list[Candidate]:
+        return []
+
+    class ConstantReranker:
+        async def score(self, query: str, documents: list[str]) -> list[float]:
+            return [0.95] * len(documents)
+
+    ticks = iter([100.0, 103.5])
+    monkeypatch.setattr("maple_chat.retrieval.hybrid.perf_counter", lambda: next(ticks))
+    monkeypatch.setattr("maple_chat.retrieval.hybrid._dense_candidates", fake_dense)
+    monkeypatch.setattr("maple_chat.retrieval.hybrid._lexical_candidates", fake_lexical)
+
+    result = await hybrid_retrieve(
+        factory=object(),  # type: ignore[arg-type]
+        query="제논 하드 메이린 최소컷",
+        query_vector=[0.0] * 1024,
+        reranker=ConstantReranker(),
+        now=datetime(2026, 8, 25, tzinfo=UTC),
+    )
+
+    assert result.rerank_seconds == pytest.approx(3.5)
+    assert result.embedding_seconds == 0.0

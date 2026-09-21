@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import UTC, datetime
 
 import pytest
@@ -138,3 +139,40 @@ async def test_bypass_mode_skips_all_retrieval() -> None:
     assert outcome.sources == ()
     assert outcome.knowledge_facts == ()
     assert "검색 증강 없이" in generator.calls[0][0].content
+
+
+class _TimedEvidenceRetriever(_EvidenceRetriever):
+    async def retrieve(self, query: str, *, use_knowledge_anchors: bool = True) -> RetrievalResult:
+        result = await super().retrieve(query, use_knowledge_anchors=use_knowledge_anchors)
+        return replace(result, embedding_seconds=0.5, rerank_seconds=2.25)
+
+
+@pytest.mark.asyncio
+async def test_retrieval_stage_seconds_reach_processing_metrics() -> None:
+    service = QAService(_TimedEvidenceRetriever(), _Generator())
+
+    outcome = await service.answer(_Session(), _request(RAGQueryMode.MIX))  # type: ignore[arg-type]
+
+    metrics = outcome.metrics
+    assert metrics is not None
+    assert metrics.embedding_seconds == pytest.approx(0.5)
+    assert metrics.rerank_seconds == pytest.approx(2.25)
+    assert metrics.retrieval_seconds is not None
+    assert metrics.retrieval_seconds > 0.0
+    assert metrics.total_seconds >= metrics.retrieval_seconds
+
+
+@pytest.mark.asyncio
+async def test_bypass_mode_reports_no_retrieval_stage_seconds() -> None:
+    service = QAService(_EvidenceRetriever(), _Generator())
+
+    outcome = await service.answer(
+        _Session(),
+        _request(RAGQueryMode.BYPASS),  # type: ignore[arg-type]
+    )
+
+    metrics = outcome.metrics
+    assert metrics is not None
+    assert metrics.embedding_seconds is None
+    assert metrics.rerank_seconds is None
+    assert metrics.retrieval_seconds is None

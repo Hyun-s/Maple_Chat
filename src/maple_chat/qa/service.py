@@ -96,6 +96,9 @@ class AnswerProcessingMetrics:
     model_seconds: float
     total_seconds: float
     model_calls: int
+    embedding_seconds: float | None = None
+    retrieval_seconds: float | None = None
+    rerank_seconds: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -234,7 +237,12 @@ def build_direct_messages(query: str) -> tuple[ChatMessage, ...]:
 
 
 def build_processing_metrics(
-    generation_metrics: tuple[GenerationMetrics, ...], *, total_seconds: float
+    generation_metrics: tuple[GenerationMetrics, ...],
+    *,
+    total_seconds: float,
+    embedding_seconds: float | None = None,
+    retrieval_seconds: float | None = None,
+    rerank_seconds: float | None = None,
 ) -> AnswerProcessingMetrics:
     combined = GenerationMetrics.combine(generation_metrics)
     if combined is None:
@@ -247,6 +255,9 @@ def build_processing_metrics(
             model_seconds=0.0,
             total_seconds=total_seconds,
             model_calls=0,
+            embedding_seconds=embedding_seconds,
+            retrieval_seconds=retrieval_seconds,
+            rerank_seconds=rerank_seconds,
         )
     return AnswerProcessingMetrics(
         input_tokens=combined.prompt_tokens,
@@ -257,6 +268,9 @@ def build_processing_metrics(
         model_seconds=combined.request_seconds,
         total_seconds=total_seconds,
         model_calls=combined.model_calls,
+        embedding_seconds=embedding_seconds,
+        retrieval_seconds=retrieval_seconds,
+        rerank_seconds=rerank_seconds,
     )
 
 
@@ -264,12 +278,21 @@ def processing_metrics_footer(metrics: AnswerProcessingMetrics) -> str:
     def rate(value: float | None) -> str:
         return "N/A" if value is None else f"{value:,.1f} tok/s"
 
+    stages: list[str] = []
+    if metrics.embedding_seconds is not None:
+        stages.append(f"임베딩 {metrics.embedding_seconds:.2f}초")
+    if metrics.retrieval_seconds is not None:
+        stages.append(f"증거 검색 합계(임베딩+DB+재정렬) {metrics.retrieval_seconds:.2f}초")
+    if metrics.rerank_seconds is not None:
+        stages.append(f"재정렬 {metrics.rerank_seconds:.2f}초")
+    stage_summary = f"\n검색 단계: {' · '.join(stages)}" if stages else ""
     return (
         "---\n"
         f"처리 지표: 입력 {metrics.input_tokens:,} tok · 출력 {metrics.output_tokens:,} tok · "
         f"총 {metrics.total_tokens:,} tok\n"
         f"속도: 입력 {rate(metrics.input_tokens_per_second)} (TTFT 기반) · "
         f"출력 {rate(metrics.output_tokens_per_second)} · 전체 {metrics.total_seconds:.2f}초"
+        f"{stage_summary}"
     )
 
 
@@ -539,6 +562,9 @@ class QAService:
 
         evidence: tuple[Candidate, ...] = ()
         knowledge_facts: tuple[KnowledgeFact, ...] = ()
+        embedding_seconds: float | None = None
+        retrieval_seconds: float | None = None
+        rerank_seconds: float | None = None
         rag_mode = RAGQueryMode.BYPASS if not request.rag_enabled else request.rag_mode
         plan = query_plan(rag_mode)
         if rag_mode is RAGQueryMode.BYPASS:
@@ -553,12 +579,16 @@ class QAService:
         else:
             retrieval = RetrievalResult((), True)
             if plan.uses_evidence:
+                retrieval_started_at = time.perf_counter()
                 if plan.uses_knowledge_anchors:
                     retrieval = await self.retriever.retrieve(request.query)
                 else:
                     retrieval = await self.retriever.retrieve(
                         request.query, use_knowledge_anchors=False
                     )
+                retrieval_seconds = time.perf_counter() - retrieval_started_at
+                embedding_seconds = retrieval.embedding_seconds
+                rerank_seconds = retrieval.rerank_seconds
                 evidence = claim_bearing_evidence(retrieval.evidence)
             if plan.uses_knowledge and self.knowledge_retriever is not None:
                 query_facts = await self.knowledge_retriever.retrieve(
@@ -652,7 +682,11 @@ class QAService:
             )
         await session.flush()
         processing_metrics = build_processing_metrics(
-            tuple(generation_metrics), total_seconds=time.perf_counter() - started_at
+            tuple(generation_metrics),
+            total_seconds=time.perf_counter() - started_at,
+            embedding_seconds=embedding_seconds,
+            retrieval_seconds=retrieval_seconds,
+            rerank_seconds=rerank_seconds,
         )
         if generation_metrics:
             text = f"{text.rstrip()}\n\n{processing_metrics_footer(processing_metrics)}"
