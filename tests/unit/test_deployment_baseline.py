@@ -127,12 +127,12 @@ def test_remote_embedding_is_explicit_and_skips_exclusive_gpu_handoff() -> None:
     index_handoff = (ROOT / "scripts/index_with_gpu_handoff.sh").read_text(encoding="utf-8")
     recovery = (ROOT / "scripts/recover_deleted_production_data.sh").read_text(encoding="utf-8")
 
-    assert "EMBEDDING_PROVIDER=local" in env_example
+    assert "EMBEDDING_PROVIDER=remote" in env_example
     assert "EMBEDDING_BASE_URL=http://127.0.0.1:8081/v1" in env_example
     assert "EMBEDDING_REMOTE_MODEL=bge-m3" in env_example
     for role in ("bot", "scheduler", "crawler-worker", "index-worker"):
         environment = compose["services"][role]["environment"]
-        assert environment["EMBEDDING_PROVIDER"] == "${EMBEDDING_PROVIDER:-local}"
+        assert environment["EMBEDDING_PROVIDER"] == "${EMBEDDING_PROVIDER:-remote}"
         assert environment["EMBEDDING_BASE_URL"] == (
             "${EMBEDDING_BASE_URL:-http://dcm-embedding:80/v1}"
         )
