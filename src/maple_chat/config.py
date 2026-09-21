@@ -261,6 +261,12 @@ class Settings(BaseSettings):
         ):
             raise ValueError("RERANKER_BASE_URL must target the approved local model boundary")
 
+        if self.role is ProcessRole.BOT and self.reranker_provider != "remote":
+            raise ValueError(
+                "RERANKER_PROVIDER=remote is required for the bot role; the in-process local "
+                "cross-encoder silently adds CPU rerank latency to every answer"
+            )
+
         if self.live_crawl_enabled and self.live_crawl_approval_file is None:
             raise ValueError("LIVE_CRAWL_APPROVAL_FILE is required when LIVE_CRAWL_ENABLED=true")
         return self

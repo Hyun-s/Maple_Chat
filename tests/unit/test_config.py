@@ -17,6 +17,7 @@ VALID_ENV = {
     "CRAWLER_USER_AGENT": "MapleChat/0.1 (+https://example.invalid/contact)",
     "CRAWLER_CONTACT": "operator@example.invalid",
     "PII_HASH_SALT": "pii-secret-canary",  # pragma: allowlist secret
+    "RERANKER_PROVIDER": "remote",
 }
 
 
@@ -213,3 +214,29 @@ def test_embedding_device_accepts_cuda_and_rejects_unknown_values() -> None:
 
     with pytest.raises(ValidationError):
         Settings(**(VALID_ENV | {"EMBEDDING_DEVICE": "tpu"}))
+
+
+def test_bot_role_requires_remote_reranker() -> None:
+    without_provider = {
+        key: value for key, value in VALID_ENV.items() if key != "RERANKER_PROVIDER"
+    }
+    with (
+        patch.dict(os.environ, without_provider, clear=True),
+        pytest.raises(ConfigurationError) as raised,
+    ):
+        load_settings()
+    assert "RERANKER_PROVIDER" in str(raised.value)
+    assert "pii-secret-canary" not in str(raised.value)
+
+    with (
+        patch.dict(os.environ, VALID_ENV | {"RERANKER_PROVIDER": "local"}, clear=True),
+        pytest.raises(ConfigurationError) as raised,
+    ):
+        load_settings()
+    assert "RERANKER_PROVIDER" in str(raised.value)
+
+
+def test_non_bot_roles_may_still_select_the_local_reranker() -> None:
+    with patch.dict(os.environ, VALID_ENV | {"RERANKER_PROVIDER": "local"}, clear=True):
+        settings = Settings(role=ProcessRole.SCHEDULER)
+    assert settings.reranker_provider == "local"

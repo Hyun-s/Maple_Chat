@@ -22,6 +22,7 @@ def make_settings(tmp_path: Path, **overrides: object) -> Settings:
         "fixture_root": tmp_path / "fixtures",
         "live_crawl_enabled": False,
         "live_crawl_approval_file": None,
+        "reranker_provider": "remote",
     }
     values.update(overrides)
     return Settings.model_validate(values)
