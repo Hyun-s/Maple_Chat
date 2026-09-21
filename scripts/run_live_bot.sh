@@ -46,8 +46,9 @@ if [[ "${RUN_WEEKLY_PATCH_SYNC:-true}" == "true" ]]; then
 fi
 
 if [[ "${BOT_DISABLE_CUDA:-false}" == "true" ]]; then
-  # Keep the in-process BGE cross-encoder on CPU: the GPU is already held by the
-  # local serving stack, and embeddings are served by the remote TEI server.
+  # Keep this host process CPU-only: the GPU is held by the local serving stack, and
+  # both embeddings and BGE reranking are served by the always-on remote TEI servers
+  # (EMBEDDING_PROVIDER=remote, RERANKER_PROVIDER=remote; the bot role enforces remote).
   export CUDA_VISIBLE_DEVICES=""
 fi
 conda_run maple-chat run-bot
