@@ -6,6 +6,7 @@ import pytest
 
 from maple_chat.retrieval import hybrid
 from maple_chat.retrieval.evidence import (
+    DEFAULT_RERANK_MAX_CHARS,
     article_source_key,
     evidence_group_key,
     rerank_document,
@@ -180,6 +181,64 @@ def test_comment_reranking_excludes_repeated_question_claims() -> None:
 
     assert "장비 세팅만 답변합니다" in document
     assert "98%가 최소컷" not in document
+
+
+def test_rerank_document_preserves_article_header_and_slices_body_tail() -> None:
+    header = "제목: 제논 보스 공략 가이드\n게시판: 도적\n분류: 팁\n작성일: 2026-10-08"
+    long_body = "이것은 제논 보스 공략의 아주 긴 본문입니다. " * 100
+    candidate = Candidate(
+        "a1",
+        "article:2298:100",
+        f"{header}\n\n{long_body}",
+        {"title": "제논 보스 공략 가이드", "board": "도적"},
+    )
+
+    assert len(candidate.text) > DEFAULT_RERANK_MAX_CHARS
+
+    document = rerank_document(candidate)
+
+    assert len(document) == DEFAULT_RERANK_MAX_CHARS
+    assert document.startswith(f"{header}\n\n")
+    assert "이것은 제논 보스 공략의 아주 긴 본문입니다." in document
+    # Verify body tail was truncated
+    assert not document.endswith(long_body[-50:])
+
+
+def test_rerank_document_preserves_comment_header_and_slices_comment_tail() -> None:
+    long_comment = "댓글 1: " + ("장비 세팅 상세 설명 및 보스 딜사이클 가이드 내용입니다. " * 80)
+    candidate = Candidate(
+        "c1",
+        "comment:article:2298:225987:771487",
+        f"질문 문맥: 무관한 질문 내용\n\n{long_comment}",
+        {"qa_branch": True, "title": "제논 질문", "board": "해적"},
+    )
+
+    document = rerank_document(candidate)
+
+    assert len(document) == DEFAULT_RERANK_MAX_CHARS
+    assert document.startswith("제목: 제논 질문\n게시판: 해적\n댓글 답변:\n댓글 1: 장비 세팅")
+    assert "무관한 질문 내용" not in document
+    # Verify trailing part of comment was sliced
+    assert not document.endswith(long_comment[-50:])
+
+
+def test_rerank_document_respects_custom_max_chars() -> None:
+    candidate = Candidate(
+        "a1",
+        "article:2298:100",
+        "제목: 제목입니다\n게시판: 자유\n\n" + "내용 " * 200,
+        {"title": "제목입니다", "board": "자유"},
+    )
+
+    document = rerank_document(candidate, max_chars=100)
+    assert len(document) == 100
+    assert document.startswith("제목: 제목입니다\n게시판: 자유\n\n")
+
+
+def test_rerank_document_leaves_short_texts_untouched() -> None:
+    short_text = "제목: 짧은 글\n게시판: 자유\n\n짧은 본문 내용입니다."
+    candidate = Candidate("a1", "article:1:1", short_text, {})
+    assert rerank_document(candidate) == short_text
 
 
 @pytest.mark.asyncio
@@ -381,6 +440,51 @@ async def test_dense_candidates_pin_hnsw_ef_search_before_the_vector_scan() -> N
 
 
 @pytest.mark.asyncio
+async def test_lexical_candidates_two_stage_prefiltering_with_similarity() -> None:
+    executed: list[str] = []
+
+    class FakeTransaction:
+        async def __aenter__(self) -> FakeTransaction:
+            return self
+
+        async def __aexit__(self, *exc_info: object) -> bool:
+            return False
+
+    class FakeResult:
+        def all(self) -> list[tuple[str, str, str, dict[str, object], float]]:
+            return [("c1", "s1", "제논 하드 메이린 컷", {}, 0.8)]
+
+    class FakeSession:
+        def begin(self) -> FakeTransaction:
+            return FakeTransaction()
+
+        async def execute(self, statement: object) -> FakeResult:
+            executed.append(str(statement))
+            return FakeResult()
+
+        async def __aenter__(self) -> FakeSession:
+            return self
+
+        async def __aexit__(self, *exc_info: object) -> bool:
+            return False
+
+    candidates, query_seconds = await hybrid._lexical_candidates(
+        lambda: FakeSession(),  # type: ignore[arg-type]
+        "제논 하드 메이린 최소칸",
+        200,
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].chunk_id == "c1"
+    assert candidates[0].lexical_score == 0.8
+    assert query_seconds >= 0.0
+    assert len(executed) == 1
+    assert "to_tsvector" in executed[0]
+    assert "similarity" in executed[0]
+    assert "ORDER BY" in executed[0]
+
+
+@pytest.mark.asyncio
 async def test_lexical_candidates_widen_the_parallel_scan_before_the_trigram_sort() -> None:
     executed: list[str] = []
     events: list[str] = []
@@ -421,7 +525,9 @@ async def test_lexical_candidates_widen_the_parallel_scan_before_the_trigram_sor
 
     assert candidates == []
     assert query_seconds >= 0.0
-    assert executed == [*hybrid._LEXICAL_SCAN_GUC_STATEMENTS, executed[-1]]
-    assert events[:4] == ["transaction:enter", "execute", "execute", "execute"]
+    # The two-stage prefilter executes first; on empty matches,
+    # fallback executes GUCs and parallel scan
+    assert "to_tsvector" in executed[0]
+    assert executed[1:3] == list(hybrid._LEXICAL_SCAN_GUC_STATEMENTS)
     assert "similarity" in executed[-1]
     assert "ORDER BY" in executed[-1]

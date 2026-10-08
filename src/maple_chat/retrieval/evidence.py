@@ -69,11 +69,59 @@ def evidence_group_key(candidate: Candidate) -> str:
     return f"source:{candidate.source_key}"
 
 
-def rerank_document(candidate: Candidate) -> str:
-    """Rank answers by their claim text, not by duplicated question text."""
+DEFAULT_RERANK_MAX_CHARS: int = 1500
 
-    if evidence_claim_role(candidate) != "answer_with_question_context":
+
+def _slice_preserving_header(header: str, body: str, max_chars: int) -> str:
+    """Slice body from the rear while preserving metadata header within max_chars."""
+    if len(header) + len(body) <= max_chars:
+        return f"{header}{body}"
+    body_budget = max(0, max_chars - len(header))
+    if body_budget > 0:
+        return f"{header}{body[:body_budget]}"
+    return header[:max_chars]
+
+
+_METADATA_HEADER_PREFIXES: tuple[str, ...] = ("제목:", "게시판:", "분류:", "작성일:", "댓글 답변:")
+
+
+def _extract_header_and_body(text: str) -> tuple[str, str]:
+    """Extract metadata header and body from formatted article chunk text."""
+    if not text.startswith("제목:"):
+        return "", text
+    if "\n\n" in text:
+        header, body = text.split("\n\n", 1)
+        return f"{header}\n\n", body
+    lines = text.splitlines(keepends=True)
+    header_lines: list[str] = []
+    body_index = 0
+    for i, line in enumerate(lines):
+        if any(line.startswith(prefix) for prefix in _METADATA_HEADER_PREFIXES):
+            header_lines.append(line)
+            body_index = i + 1
+        else:
+            break
+    if header_lines and body_index < len(lines):
+        return "".join(header_lines), "".join(lines[body_index:])
+    return "", text
+
+
+def rerank_document(
+    candidate: Candidate,
+    *,
+    max_chars: int = DEFAULT_RERANK_MAX_CHARS,
+) -> str:
+    """Rank answers by their claim text, sliced to fit reranker token window."""
+
+    if evidence_claim_role(candidate) == "answer_with_question_context":
+        title = str(candidate.metadata.get("title") or "제목 없음")
+        board = str(candidate.metadata.get("board") or "게시판 미상")
+        header = f"제목: {title}\n게시판: {board}\n댓글 답변:\n"
+        body = claim_bearing_text(candidate)
+        return _slice_preserving_header(header, body, max_chars)
+
+    if len(candidate.text) <= max_chars:
         return candidate.text
-    title = str(candidate.metadata.get("title") or "제목 없음")
-    board = str(candidate.metadata.get("board") or "게시판 미상")
-    return f"제목: {title}\n게시판: {board}\n댓글 답변:\n{claim_bearing_text(candidate)}"
+
+    header, body = _extract_header_and_body(candidate.text)
+    return _slice_preserving_header(header, body, max_chars)
