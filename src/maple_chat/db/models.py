@@ -237,6 +237,11 @@ class Chunk(Base):
             postgresql_using="gin",
             postgresql_ops={"text": "gin_trgm_ops"},
         ),
+        sa.Index(
+            "ix_chunks_text_tsv",
+            sa.text("to_tsvector('simple', text)"),
+            postgresql_using="gin",
+        ),
     )
 
     chunk_id: Mapped[str] = mapped_column(sa.String(64), primary_key=True)
