@@ -93,9 +93,20 @@ async def index_sanitized_sources(
     provider: EmbeddingProvider,
     activated_at: datetime,
     batch_size: int = 32,
+    max_batches_per_source: int = 0,
 ) -> IndexResult:
+    """Embed pending sources, bounding how many batches each source type may take.
+
+    The three source loops run one after another, so an uncapped article loop only
+    stops once no sanitized article is left. While a crawl keeps producing new
+    articles that never happens, and comments and OCR assets -- which are queued
+    behind it -- are embedded never at all. A bound lets every source type advance
+    on each run. Zero keeps the old drain-everything behaviour.
+    """
     if batch_size < 1 or batch_size > 256:
         raise ValueError("index batch size must be between 1 and 256")
+    if max_batches_per_source < 0:
+        raise ValueError("max batches per source must not be negative")
     spec = provider.spec
     spec.validate()
     article_count = 0
@@ -119,6 +130,7 @@ async def index_sanitized_sources(
     media_statuses = ["ocr_ready", "indexed"] if rebuild_revision else ["ocr_ready"]
 
     article_cursor = 0
+    article_batches = 0
     while True:
         async with factory() as session, session.begin():
             loaded_revision = await session.get(EmbeddingRevision, revision_id)
@@ -140,6 +152,9 @@ async def index_sanitized_sources(
             ).all()
             if not article_rows:
                 break
+            if max_batches_per_source and article_batches >= max_batches_per_source:
+                break
+            article_batches += 1
             batch_drafts: list[ChunkDraft] = []
             for article, board_name, category_name in article_rows:
                 article_cursor = max(article_cursor, article.id)
@@ -187,6 +202,7 @@ async def index_sanitized_sources(
                 )
 
     comment_cursor = 0
+    comment_batches = 0
     while True:
         async with factory() as session, session.begin():
             loaded_revision = await session.get(EmbeddingRevision, revision_id)
@@ -210,6 +226,9 @@ async def index_sanitized_sources(
             ).all()
             if not comment_rows:
                 break
+            if max_batches_per_source and comment_batches >= max_batches_per_source:
+                break
+            comment_batches += 1
             batch_drafts = []
             for comment, article, board_name, category_name in comment_rows:
                 comment_cursor = max(comment_cursor, comment.id)
@@ -248,6 +267,7 @@ async def index_sanitized_sources(
                 )
 
     media_cursor = 0
+    media_batches = 0
     while True:
         async with factory() as session, session.begin():
             loaded_revision = await session.get(EmbeddingRevision, revision_id)
@@ -271,6 +291,9 @@ async def index_sanitized_sources(
             ).all()
             if not media_rows:
                 break
+            if max_batches_per_source and media_batches >= max_batches_per_source:
+                break
+            media_batches += 1
             batch_drafts = []
             for asset, article, board_name, category_name in media_rows:
                 media_cursor = max(media_cursor, asset.id)

@@ -1,0 +1,26 @@
+[Unit]
+Description=Maple Chat resumable full-board backfill crawl
+Documentation=file:///home/hyuns/project/Maple_Chat/docs/operations.md
+After=docker.service network-online.target
+Wants=docker.service network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/hyuns/project/Maple_Chat
+# Indexing is owned by maple-chat-index.service so the crawl never competes with
+# it for the single TEI encoder. The script exits 0 once every board checkpoint
+# passes the target page, which leaves the unit cleanly inactive.
+Environment=FULL_BACKFILL_INLINE_INDEX=false
+ExecStart=/bin/bash -lc '/home/hyuns/project/Maple_Chat/scripts/run_full_backfill.sh >> /home/hyuns/project/Maple_Chat/logs/full-backfill.log 2>&1'
+# A completed plan can leave a board short of the target page, because each slice
+# resumes from the stored checkpoint and may consume fewer listing pages than the
+# static plan assumed. Restart=always turns a clean exit into a 30-minute re-plan
+# poll that does no network work once every checkpoint passes the target.
+Restart=always
+RestartPreventExitStatus=2
+RestartSec=1800
+TimeoutStopSec=120
+Nice=10
+
+[Install]
+WantedBy=default.target

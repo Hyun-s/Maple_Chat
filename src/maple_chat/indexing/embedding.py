@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import math
+import random
 from dataclasses import dataclass
 from typing import Any, ClassVar, Protocol, cast
 from urllib.parse import urlparse
@@ -49,6 +51,14 @@ class RemoteEmbeddingProvider:
     # so a single request is not an option. Shard per request instead.
     _FALLBACK_MAX_BATCH_SIZE: ClassVar[int] = 32
 
+    # TEI sheds load with 429 while its encoder queue is saturated, which is the
+    # expected shape of a busy box rather than a broken revision. The budget stays
+    # short so a genuinely unhealthy service still fails fast.
+    _RETRYABLE_STATUS_CODES: ClassVar[frozenset[int]] = frozenset({429, 503})
+    _MAX_ATTEMPTS: ClassVar[int] = 3
+    _BACKOFF_BASE_SECONDS: ClassVar[float] = 0.25
+    _BACKOFF_CAP_SECONDS: ClassVar[float] = 2.0
+
     _ALLOWED_HOSTS: ClassVar[set[str]] = {
         "127.0.0.1",
         "::1",
@@ -83,14 +93,60 @@ class RemoteEmbeddingProvider:
         self._served_model = served_model
         self._info_url = parsed._replace(path="/info").geturl()
         self._advertised_max_batch_size: int | None = None
+        self._timeout_seconds = timeout_seconds
         self._owns_client = client is None
         self._client = client or httpx.AsyncClient(
             base_url=f"{base_url.rstrip('/')}/",
             timeout=timeout_seconds,
         )
 
+    async def _request_with_retry(
+        self,
+        method: str,
+        url: str,
+        *,
+        json_body: dict[str, object] | None = None,
+    ) -> httpx.Response:
+        """Send a request, retrying bounded TEI overload responses (429/503).
+
+        Exhaustion deliberately returns the final response so callers keep the
+        existing ``raise_for_status`` failure semantics.
+        """
+        attempt = 1
+        while True:
+            request = self._client.build_request(
+                method,
+                url,
+                json=json_body,
+                timeout=self._timeout_seconds,
+            )
+            response = await self._client.send(request)
+            if (
+                response.status_code not in self._RETRYABLE_STATUS_CODES
+                or attempt >= self._MAX_ATTEMPTS
+            ):
+                return response
+            await asyncio.sleep(self._retry_delay(attempt, response))
+            attempt += 1
+
+    def _retry_delay(self, attempt: int, response: httpx.Response) -> float:
+        retry_after = response.headers.get("retry-after")
+        if retry_after is not None:
+            try:
+                requested = float(retry_after)
+            except ValueError:
+                requested = -1.0
+            if requested >= 0 and math.isfinite(requested):
+                return min(requested, self._BACKOFF_CAP_SECONDS)
+        base = min(
+            self._BACKOFF_CAP_SECONDS,
+            self._BACKOFF_BASE_SECONDS * (2 ** (attempt - 1)),
+        )
+        jitter = 0.5 + random.random() / 2  # noqa: S311 - backoff jitter, not crypto
+        return float(base * jitter)
+
     async def _attest_model(self) -> None:
-        response = await self._client.get(self._info_url)
+        response = await self._request_with_retry("GET", self._info_url)
         response.raise_for_status()
         try:
             payload = response.json()
@@ -126,9 +182,10 @@ class RemoteEmbeddingProvider:
         return max(1, min(self._advertised_max_batch_size, self._FALLBACK_MAX_BATCH_SIZE))
 
     async def _embed_window(self, texts: list[str]) -> list[list[float]]:
-        response = await self._client.post(
+        response = await self._request_with_retry(
+            "POST",
             "embeddings",
-            json={
+            json_body={
                 "model": self._served_model,
                 "input": texts,
                 "encoding_format": "float",

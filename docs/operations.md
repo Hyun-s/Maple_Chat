@@ -18,10 +18,12 @@ vLLM run in containers.
 Startup validates role configuration before expensive work, starts loopback PostgreSQL on port
 `55432`, migrates it, runs one bounded live sync, verifies or starts the local Qwen vLLM, and then
 starts the Discord gateway client. It never prints the token, database password, or PII salt.
-While the bot is running, `daily_sync_loop.sh` starts an ID-deduplicated incremental run at 05:00
-Asia/Seoul unless `RUN_DAILY_SYNC=false`. Page 1 is refreshed for edits and comments; additional
-recent pages fetch details only for unseen `(board_id, remote_article_id)` values. Each run also
-continues three historical pages per board and overlaps the two pages before each checkpoint to
+`maple-chat-daily-sync.timer` starts an ID-deduplicated incremental run at 05:00 Asia/Seoul each
+day whether or not the bot is online; `daily_sync_loop.sh` fills that role only when
+`RUN_DAILY_SYNC=true` and no timer is installed. Page 1 is refreshed for edits and comments;
+additional recent pages fetch details only for unseen `(board_id, remote_article_id)` values. Each
+run can also continue `DAILY_BACKFILL_PAGES_PER_BOARD` historical pages per board (default one,
+zero for the supervised timer) and overlaps the two pages before each checkpoint to
 recover IDs shifted across page boundaries by newly inserted posts. A shared crawl lock prevents
 overlapping Inven jobs.
 
@@ -185,3 +187,48 @@ answer/provenance history cannot be recreated from the remaining progress logs.
 Stop acquiring new leases, allow in-flight DB transactions to commit or roll back within the
 configured grace period, cancel remaining tasks, then stop the process. Expired leases are
 reclaimed on startup. Never acknowledge a job before its transaction commits.
+
+## Supervised services (systemd user units)
+
+Unit files live in `deploy/systemd/` and install into the operator's user manager. That manager
+already runs with lingering enabled, so enabling a unit is enough to survive a reboot.
+
+```bash
+cp deploy/systemd/*.service deploy/systemd/*.timer ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now maple-chat-index.service maple-chat-backfill.service
+systemctl --user enable --now maple-chat-daily-sync.timer
+```
+
+- `maple-chat-index.service` runs `index_with_gpu_handoff.sh` under `Restart=always` with a 600
+  second pause, so the drain resumes after a clean "nothing pending" exit or an exhausted retry
+  budget. Every start first runs `verify_model_plane.sh`, which names a degraded TEI encoder
+  instead of leaving an opaque 424 behind.
+- `maple-chat-backfill.service` runs `run_full_backfill.sh` with `FULL_BACKFILL_INLINE_INDEX=false`
+  so the crawl plane never competes with the indexing worker for the single TEI encoder. It exits 0
+  once every board checkpoint passes `FULL_BACKFILL_TARGET_PAGE` and stays inactive.
+- `maple-chat-daily-sync.timer` fires `maple-chat-daily-sync.service` at 05:00 KST every day, and
+  `Persistent=true` replays the run after a shutdown instead of losing the day. The service is a
+  oneshot over `daily_incremental_sync.sh` with `DAILY_BACKFILL_PAGES_PER_BOARD=0`: it only
+  discovers newly listed posts (ID-deduplicated, stops at the known-ID boundary) and leaves
+  historical pages to the backfill worker. Its start timeout is `infinity` because the default 90
+  seconds would kill a multi-board crawl.
+- The crawl lock at `LIVE_CRAWL_LOCK_FILE` serialises both crawl planes, so the 05:00 run waits for
+  one in-flight backfill slice rather than racing it. The daily script also skips
+  `index_with_gpu_handoff.sh` when `INDEX_LOCK_FILE` is already held, which keeps it from waiting on
+  a full backlog drain while still holding the crawl lock.
+- Exit code 5 from the daily service means at least one listing page failed after retries while the
+  committed data stayed valid; the next run re-discovers the gap. `scripts/run_live_bot.sh` no
+  longer starts `daily_sync_loop.sh` by default (`RUN_DAILY_SYNC=false`) so the timer is the only
+  scheduler; set it back to `true` only where no systemd user session exists.
+- `maple-chat.service` wraps `run_live_bot.sh`, which still supervises the weekly patch-note loop.
+  Installing it is a deliberate cutover: stop the manually started launcher first, otherwise the
+  Discord gateway would be connected twice.
+
+Verify scheduling with `systemctl --user list-timers` and read a run in
+`logs/daily-incremental.log`. A cheap narrow rehearsal uses an approved subset:
+`DAILY_SYNC_BOARD_IDS=2304 DAILY_LATEST_MAX_SCAN_PAGES=3 scripts/daily_incremental_sync.sh`.
+
+Logs keep appending to `logs/*.log` as before, and `journalctl --user -fu maple-chat-index.service`
+shows restart reasons. Undo with `systemctl --user disable --now <unit>` followed by removing the
+unit file.

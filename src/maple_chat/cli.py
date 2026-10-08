@@ -26,6 +26,7 @@ from maple_chat.indexing.embedding import EmbeddingProvider
 from maple_chat.indexing.service import index_sanitized_sources
 from maple_chat.knowledge.audit import audit_knowledge_terms
 from maple_chat.knowledge.service import sync_builtin_knowledge
+from maple_chat.knowledge.threads import load_thread_graph
 from maple_chat.llm.client import LocalLLMClient
 from maple_chat.patch_reactions import (
     DatabasePatchReactionSearch,
@@ -94,14 +95,30 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_live_arguments(sync)
     sync.add_argument("--index-batch-size", type=int, default=32)
+    sync.add_argument("--no-index", action="store_true")
 
     index = subparsers.add_parser("index", help="embed and index all sanitized sources")
     index.add_argument("--batch-size", type=int, default=32)
+    index.add_argument(
+        "--max-batches-per-source",
+        type=int,
+        default=0,
+        help="cap batches per source type so comments cannot starve behind articles",
+    )
 
     subparsers.add_parser(
         "sync-knowledge",
         help="validate and upsert the bundled provenance-bearing knowledge graph",
     )
+    thread = subparsers.add_parser(
+        "thread-graph", help="read a bounded article/comment relationship graph as JSON"
+    )
+    thread.add_argument("--board", type=int, choices=sorted(BOARD_NAMES), required=True)
+    thread.add_argument("--article", type=int, required=True, help="remote Inven article ID")
+    thread.add_argument("--comment", type=int, help="focus on a remote comment and its ancestors")
+    thread.add_argument("--max-comments", type=int, default=32)
+    thread.add_argument("--max-hops", type=int, default=4)
+    thread.add_argument("--indexed-only", action="store_true")
     patch_notes = subparsers.add_parser(
         "sync-patch-notes",
         help="collect the rolling official MapleStory patch-note window and index changes",
@@ -138,6 +155,14 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "audit-knowledge",
         help="compare collected terminology uses with curated canonical relations",
+    )
+    inv_cache = subparsers.add_parser(
+        "invalidate-cache",
+        help="invalidate all or patch-specific entries in the Redis semantic cache",
+    )
+    inv_cache.add_argument("--patch-version", type=str, default=None, help="target patch version")
+    inv_cache.add_argument(
+        "--query", type=str, default=None, help="target single query to invalidate"
     )
     subparsers.add_parser("preflight", help="check database, local LLM, and model configuration")
     subparsers.add_parser("run-bot", help="start the single-guild Discord bot")
@@ -216,7 +241,7 @@ async def _crawl_live(args: argparse.Namespace) -> None:
         await engine.dispose()
 
 
-async def _index(batch_size: int) -> None:
+async def _index(batch_size: int, max_batches_per_source: int = 0) -> None:
     settings = load_settings(ProcessRole.INDEX_WORKER)
     engine = create_engine(settings)
     factory = create_session_factory(engine)
@@ -229,6 +254,7 @@ async def _index(batch_size: int) -> None:
             provider=provider,
             activated_at=utc_now(),
             batch_size=batch_size,
+            max_batches_per_source=max_batches_per_source,
         )
         print(json.dumps(asdict(result), ensure_ascii=False, sort_keys=True))
     finally:
@@ -398,28 +424,81 @@ async def _audit_knowledge() -> None:
         await engine.dispose()
 
 
+async def _thread_graph(args: argparse.Namespace) -> None:
+    settings = load_settings(ProcessRole.SCHEDULER)
+    engine = create_engine(settings)
+    factory = create_session_factory(engine)
+    try:
+        async with factory() as session, session.begin():
+            await session.execute(sa.text("SET TRANSACTION READ ONLY"))
+            graph = await load_thread_graph(
+                session,
+                board_id=args.board,
+                remote_article_id=args.article,
+                remote_comment_id=args.comment,
+                max_comments=args.max_comments,
+                max_hops=args.max_hops,
+                indexed_only=args.indexed_only,
+            )
+        if graph is None:
+            raise ValueError("requested thread is unavailable")
+        print(json.dumps(asdict(graph), ensure_ascii=False, sort_keys=True))
+    finally:
+        await engine.dispose()
+
+
 async def _dispatch(args: argparse.Namespace) -> None:
     if args.command == "crawl-live":
         await _crawl_live(args)
     elif args.command == "sync-live":
         await _crawl_live(args)
-        await _index(args.index_batch_size)
+        if not args.no_index:
+            await _index(args.index_batch_size)
     elif args.command == "index":
-        await _index(args.batch_size)
+        await _index(args.batch_size, args.max_batches_per_source)
     elif args.command == "sync-knowledge":
         await _sync_knowledge()
+    elif args.command == "thread-graph":
+        await _thread_graph(args)
     elif args.command == "sync-patch-notes":
         await _sync_patch_notes(args)
     elif args.command == "summarize-patch-reactions":
         await _summarize_patch_reactions(args)
     elif args.command == "audit-knowledge":
         await _audit_knowledge()
+    elif args.command == "invalidate-cache":
+        await _invalidate_cache(args)
     elif args.command == "preflight":
         await _preflight()
     elif args.command == "run-bot":
         await run_discord_bot(load_settings(ProcessRole.BOT))
     else:  # pragma: no cover - argparse prevents this
         raise RuntimeError("unknown command")
+
+
+async def _invalidate_cache(args: argparse.Namespace) -> None:
+    from maple_chat.qa.semantic_cache import RedisSemanticCache
+
+    settings = load_settings(ProcessRole.BOT)
+    cache = RedisSemanticCache(
+        redis_url=settings.redis_url,
+        index_name=settings.semantic_cache_index_name,
+        key_prefix=settings.semantic_cache_key_prefix,
+        similarity_threshold=settings.semantic_cache_similarity_threshold,
+        ttl_seconds=settings.semantic_cache_ttl_seconds,
+    )
+    try:
+        if args.query:
+            deleted = await cache.delete_by_query(args.query)
+            print(f"deleted query cache: {deleted}")
+        elif args.patch_version:
+            count = await cache.invalidate_on_patch(args.patch_version)
+            print(f"invalidated {count} cache entries for patch {args.patch_version}")
+        else:
+            count = await cache.invalidate_all()
+            print(f"invalidated {count} semantic cache entries")
+    finally:
+        await cache.aclose()
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -453,3 +532,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     except KeyboardInterrupt:
         return 130
     return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+

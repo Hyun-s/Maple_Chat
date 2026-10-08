@@ -1,0 +1,22 @@
+[Unit]
+Description=Maple Chat embedding backlog drain (BGE-M3 via TEI)
+Documentation=file:///home/hyuns/project/Maple_Chat/docs/operations.md
+After=docker.service network-online.target
+Wants=docker.service network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/hyuns/project/Maple_Chat
+# The handoff script exits 0 when nothing is pending and 7 after exhausting its
+# retries; Restart=always turns that one-shot into a supervised poll loop, and
+# scripts/verify_model_plane.sh fails fast (instead of an opaque 424) when the
+# TEI encoder plane is not actually usable yet.
+ExecStart=/bin/bash -lc '/home/hyuns/project/Maple_Chat/scripts/index_with_gpu_handoff.sh >> /home/hyuns/project/Maple_Chat/logs/index-backlog.log 2>&1'
+Restart=always
+RestartPreventExitStatus=2
+RestartSec=600
+TimeoutStopSec=90
+Nice=10
+
+[Install]
+WantedBy=default.target

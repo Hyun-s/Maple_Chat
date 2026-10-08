@@ -1,0 +1,15 @@
+[Unit]
+Description=Daily 05:00 KST Maple Chat new-post crawl
+Documentation=file:///home/hyuns/project/Maple_Chat/docs/operations.md
+
+[Timer]
+# Host timezone is Asia/Seoul, so this fires at 05:00 KST. Persistent=true replays
+# a missed run after a reboot or shutdown instead of silently skipping the day.
+OnCalendar=*-*-* 05:00:00
+Persistent=true
+AccuracySec=1min
+RandomizedDelaySec=0
+Unit=maple-chat-daily-sync.service
+
+[Install]
+WantedBy=timers.target

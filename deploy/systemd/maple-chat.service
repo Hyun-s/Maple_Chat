@@ -1,0 +1,20 @@
+[Unit]
+Description=Maple Chat Discord bot (also supervises daily sync and weekly patch-note loops)
+Documentation=file:///home/hyuns/project/Maple_Chat/docs/operations.md
+After=docker.service network-online.target
+Wants=docker.service network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/hyuns/project/Maple_Chat
+Environment=BOT_DISABLE_CUDA=true
+# run_live_bot.sh is already a foreground supervisor: it validates config, starts
+# PostgreSQL, launches the daily and weekly loops, traps their cleanup, then runs
+# the bot in the foreground.
+ExecStart=/bin/bash -lc 'BOT_DISABLE_CUDA=true /home/hyuns/project/Maple_Chat/scripts/run_live_bot.sh >> /home/hyuns/project/Maple_Chat/logs/discord-bot.log 2>&1'
+Restart=always
+RestartSec=30
+TimeoutStopSec=60
+
+[Install]
+WantedBy=default.target

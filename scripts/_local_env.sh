@@ -53,6 +53,13 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
   export DATABASE_URL
 fi
 
+REDIS_PORT="${REDIS_PORT:-56379}"
+export REDIS_PORT
+if [[ -z "${REDIS_URL:-}" ]]; then
+  REDIS_URL="redis://127.0.0.1:${REDIS_PORT}/0"
+  export REDIS_URL
+fi
+
 compose_local() {
   docker compose -f "$ROOT_DIR/compose.yml" -f "$ROOT_DIR/compose.local.yml" "$@"
 }
@@ -62,14 +69,15 @@ conda_run() {
 }
 
 start_database() {
-  compose_local up -d postgres
+  compose_local up -d postgres redis
   for _ in $(seq 1 60); do
-    if compose_local exec -T postgres pg_isready -U maple_chat -d maple_chat >/dev/null 2>&1; then
+    if compose_local exec -T postgres pg_isready -U maple_chat -d maple_chat >/dev/null 2>&1 && \
+       compose_local exec -T redis redis-cli ping >/dev/null 2>&1; then
       (cd "$ROOT_DIR" && conda_run alembic upgrade head)
       return 0
     fi
     sleep 1
   done
-  echo "PostgreSQL did not become ready within 60 seconds" >&2
+  echo "Databases did not become ready within 60 seconds" >&2
   return 1
 }

@@ -33,9 +33,11 @@ from maple_chat.knowledge.service import (
     KnowledgeFact,
     sync_builtin_knowledge,
 )
+from maple_chat.knowledge.threads import attach_thread_context
 from maple_chat.llm.client import LocalLLMClient
 from maple_chat.nexon.client import NexonOpenAPIClient
 from maple_chat.ops.logging import configure_json_logging
+from maple_chat.qa.semantic_cache import RedisSemanticCache, SemanticCacheMiddleware
 from maple_chat.qa.service import (
     AnswerOutcome,
     QAService,
@@ -158,14 +160,15 @@ class DatabaseHybridRetriever:
             anchor_terms=anchor_terms,
             required_scope_groups=required_scope_groups,
         )
-        return replace(result, embedding_seconds=embedding_seconds)
+        evidence = await attach_thread_context(self.factory, result.evidence)
+        return replace(result, evidence=evidence, embedding_seconds=embedding_seconds)
 
 
 class DatabaseAnswerHandler:
     def __init__(
         self,
         factory: async_sessionmaker[AsyncSession],
-        service: QAService,
+        service: QAService | SemanticCacheMiddleware,
         agent_service: DurableAgentService | AgentNotConfiguredService,
     ) -> None:
         self.factory = factory
@@ -211,6 +214,13 @@ class DatabaseAnswerHandler:
                     "agent_enabled": agent_enabled,
                     "agent_resumed": agent_resume_id is not None,
                     "duplicate": outcome.duplicate,
+                    "cache_hit": (
+                        outcome.cached
+                        or (metrics.cache_hit if metrics is not None else False)
+                    ),
+                    "cache_similarity": (
+                        metrics.cache_similarity if metrics is not None else None
+                    ),
                     "input_tokens": metrics.input_tokens if metrics is not None else 0,
                     "output_tokens": metrics.output_tokens if metrics is not None else 0,
                     "total_tokens": metrics.total_tokens if metrics is not None else 0,
@@ -373,11 +383,31 @@ async def run_discord_bot(settings: Settings) -> None:
                     max_tool_calls=settings.agent_max_tool_calls,
                 ),
             )
+        qa_service = QAService(retriever, llm, knowledge_retriever=knowledge_retriever)
+        qa_pipeline: QAService | SemanticCacheMiddleware = qa_service
+        redis_cache: RedisSemanticCache | None = None
+        if settings.semantic_cache_enabled:
+            redis_cache = RedisSemanticCache(
+                redis_url=settings.redis_url,
+                index_name=settings.semantic_cache_index_name,
+                key_prefix=settings.semantic_cache_key_prefix,
+                similarity_threshold=settings.semantic_cache_similarity_threshold,
+                ttl_seconds=settings.semantic_cache_ttl_seconds,
+            )
+            await redis_cache.ensure_index()
+            qa_pipeline = SemanticCacheMiddleware(
+                service=qa_service,
+                cache=redis_cache,
+                embedding=embedding,
+                enabled=True,
+                similarity_threshold=settings.semantic_cache_similarity_threshold,
+            )
         handler = DatabaseAnswerHandler(
             factory,
-            QAService(retriever, llm, knowledge_retriever=knowledge_retriever),
+            qa_pipeline,
             agent_service,
         )
+        logger.info("community_thread_graph_enabled")
         source_loader = DatabaseSourceLoader(factory)
         client = MapleDiscordClient(
             guild_ids=guild_ids,
@@ -392,6 +422,8 @@ async def run_discord_bot(settings: Settings) -> None:
             if not client.is_closed():
                 await client.close()
     finally:
+        if redis_cache is not None:
+            await redis_cache.aclose()
         if nexon_client is not None:
             await nexon_client.aclose()
         if embedding is not None:

@@ -1,0 +1,24 @@
+[Unit]
+Description=Maple Chat daily new-post crawl (ID-deduplicated, all approved boards)
+Documentation=file:///home/hyuns/project/Maple_Chat/docs/operations.md
+After=docker.service network-online.target
+Wants=docker.service network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/hyuns/project/Maple_Chat
+# Historical pages belong to maple-chat-backfill.service while it runs; this run
+# only discovers newly listed posts. New rows are embedded by
+# maple-chat-index.service, which the script yields to instead of queueing on it.
+Environment=DAILY_BACKFILL_PAGES_PER_BOARD=0
+# Type=oneshot inherits the 90s default start timeout, which would kill a
+# multi-board crawl, and the crawl lock can make this wait for one backfill slice.
+TimeoutStartSec=infinity
+TimeoutStopSec=120
+Nice=10
+StandardOutput=append:/home/hyuns/project/Maple_Chat/logs/daily-incremental.log
+StandardError=append:/home/hyuns/project/Maple_Chat/logs/daily-incremental.log
+ExecStart=/home/hyuns/project/Maple_Chat/scripts/daily_incremental_sync.sh
+
+[Install]
+WantedBy=default.target

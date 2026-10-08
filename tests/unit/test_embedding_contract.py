@@ -641,3 +641,95 @@ def test_reranker_contract_rejects_unpinned_or_wrong_model() -> None:
         RerankerSpec("BAAI/bge-reranker-v2-m3", "").validate()
     with pytest.raises(ValueError, match="BGE"):
         RerankerSpec("other", "commit").validate()
+
+
+@pytest.mark.asyncio
+async def test_remote_embedding_provider_retries_429_then_succeeds_honouring_retry_after(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sleeps: list[float] = []
+
+    async def fake_sleep(delay: float) -> None:
+        sleeps.append(delay)
+
+    monkeypatch.setattr("asyncio.sleep", fake_sleep)
+    posts = 0
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal posts
+        if request.url.path == "/info":
+            return httpx.Response(
+                200,
+                json={"model_id": "BAAI/bge-m3", "model_sha": "commit-1"},
+            )
+        posts += 1
+        if posts == 1:
+            return httpx.Response(
+                429,
+                json={"error": "Model is overloaded"},
+                headers={"retry-after": "1"},
+            )
+        return httpx.Response(
+            200,
+            json={
+                "object": "list",
+                "model": "bge-m3",
+                "data": [{"object": "embedding", "index": 0, "embedding": _unit_vector(0)}],
+            },
+        )
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler),
+        base_url="http://127.0.0.1:8081/v1/",
+    ) as client:
+        provider = RemoteEmbeddingProvider(
+            EmbeddingSpec("v1", "BAAI/bge-m3", "commit-1"),
+            base_url="http://127.0.0.1:8081/v1",
+            served_model="bge-m3",
+            timeout_seconds=10,
+            client=client,
+        )
+        assert await provider.embed(["\uc81b"]) == [_unit_vector(0)]
+        await provider.aclose()
+
+    assert posts == 2
+    assert sleeps == [1.0]
+
+
+@pytest.mark.asyncio
+async def test_remote_embedding_provider_exhausts_bounded_retries_and_keeps_raise_semantics(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def fake_sleep(delay: float) -> None:
+        return None
+
+    monkeypatch.setattr("asyncio.sleep", fake_sleep)
+    posts = 0
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal posts
+        if request.url.path == "/info":
+            return httpx.Response(
+                200,
+                json={"model_id": "BAAI/bge-m3", "model_sha": "commit-1"},
+            )
+        posts += 1
+        return httpx.Response(429, json={"error": "Model is overloaded"})
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler),
+        base_url="http://127.0.0.1:8081/v1/",
+    ) as client:
+        provider = RemoteEmbeddingProvider(
+            EmbeddingSpec("v1", "BAAI/bge-m3", "commit-1"),
+            base_url="http://127.0.0.1:8081/v1",
+            served_model="bge-m3",
+            timeout_seconds=10,
+            client=client,
+        )
+        with pytest.raises(httpx.HTTPStatusError) as excinfo:
+            await provider.embed(["\uc81b"])
+        assert excinfo.value.response.status_code == 429
+        await provider.aclose()
+
+    assert posts == 3

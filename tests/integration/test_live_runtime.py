@@ -318,3 +318,70 @@ async def test_rights_gated_live_http_to_index_pipeline_and_channel_bootstrap(
         assert board.crawl_checkpoint["last_successful_page"] == 1
         assert board.crawl_checkpoint["next_backfill_page"] == 2
         assert board.crawl_checkpoint["last_refresh_at"] == "2026-08-05T01:00:00+00:00"
+
+
+@pytest.mark.asyncio
+async def test_bounded_index_pass_embeds_comments_behind_a_full_article_queue(
+    factory: async_sessionmaker[AsyncSession],
+) -> None:
+    """A crawl that keeps refilling the article queue must not starve comments."""
+    observed_at = datetime(2026, 8, 5, tzinfo=UTC)
+    async with factory() as session, session.begin():
+        session.add(Board(board_id=2304, name="tips"))
+        await session.flush()
+        for ordinal in range(1, 6):
+            article = Article(
+                board_id=2304,
+                remote_article_id=ordinal,
+                url=f"https://www.inven.co.kr/board/maple/2304/{ordinal}",
+                title=f"article {ordinal}",
+                sanitized_body=f"sanitized body {ordinal}",
+                first_observed_at=observed_at,
+                last_observed_at=observed_at,
+                status=SourceStatus.SANITIZED,
+                content_hash=f"{ordinal:064d}",
+            )
+            article.comments.append(
+                Comment(
+                    remote_comment_id=ordinal * 10,
+                    sanitized_body=f"comment body {ordinal}",
+                    first_observed_at=observed_at,
+                    last_observed_at=observed_at,
+                    status=SourceStatus.SANITIZED,
+                    content_hash=f"{ordinal + 100:064d}",
+                )
+            )
+            session.add(article)
+
+    capped = await index_sanitized_sources(
+        factory,
+        provider=FixedEmbedding(),
+        activated_at=observed_at,
+        batch_size=1,
+        max_batches_per_source=1,
+    )
+    assert capped.articles == 1
+    assert capped.comments == 1
+
+    async with factory() as session:
+        pending_articles = await session.scalar(
+            sa.select(sa.func.count())
+            .select_from(Article)
+            .where(Article.status == SourceStatus.SANITIZED)
+        )
+        pending_comments = await session.scalar(
+            sa.select(sa.func.count())
+            .select_from(Comment)
+            .where(Comment.status == SourceStatus.SANITIZED)
+        )
+    assert pending_articles == 4
+    assert pending_comments == 4
+
+    drained = await index_sanitized_sources(
+        factory,
+        provider=FixedEmbedding(),
+        activated_at=observed_at,
+        batch_size=1,
+    )
+    assert drained.articles == 4
+    assert drained.comments == 4

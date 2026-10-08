@@ -42,6 +42,10 @@ x-app-service: &app-service
     RERANKER_REMOTE_MODEL: "${RERANKER_REMOTE_MODEL:-bge-reranker-v2-m3}"
     RERANKER_TIMEOUT_SECONDS: "${RERANKER_TIMEOUT_SECONDS:-60}"
     RERANKER_MODEL_COMMIT: "${RERANKER_MODEL_COMMIT:-953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e}"
+    REDIS_URL: "${REDIS_URL:-redis://redis:6379/0}"
+    SEMANTIC_CACHE_ENABLED: "${SEMANTIC_CACHE_ENABLED:-true}"
+    SEMANTIC_CACHE_SIMILARITY_THRESHOLD: "${SEMANTIC_CACHE_SIMILARITY_THRESHOLD:-0.96}"
+    SEMANTIC_CACHE_TTL_SECONDS: "${SEMANTIC_CACHE_TTL_SECONDS:-604800}"
     LOG_LEVEL: "${LOG_LEVEL:-INFO}"
 
 services:
@@ -65,6 +69,23 @@ services:
     security_opt:
       - no-new-privileges:true
     stop_grace_period: 30s
+
+  redis:
+    image: redis/redis-stack-server:latest
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    volumes:
+      - redis-data:/data
+    networks:
+      - data-plane
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 15s
 
   bot:
     <<: *app-service
@@ -117,3 +138,5 @@ networks:
 
 volumes:
   postgres-data: {}
+  redis-data: {}
+

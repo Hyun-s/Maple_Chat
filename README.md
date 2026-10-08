@@ -16,6 +16,8 @@ RAG, 정보검색 수학, 임베딩·ANN, hybrid 검색, PostgreSQL, 지식 그�
 [`docs/current-system-overview.md`](docs/current-system-overview.md)에 정리되어 있습니다.
 직업 계층·아이템 약어 지식 그래프의 이론, 온톨로지, DB 구조, RAG 결합 방식은
 [`docs/knowledge-graph.md`](docs/knowledge-graph.md)에 정리되어 있습니다.
+게시글·댓글·대댓글의 관계 그래프와 검색 문맥 연결은
+[`docs/community-thread-graph.md`](docs/community-thread-graph.md)에 정리되어 있습니다.
 수집 데이터에서 공식 명칭 차이를 계속 검사하는 결과와 한계는
 [`docs/knowledge-audit.md`](docs/knowledge-audit.md)에 정리되어 있습니다.
 실제 local Qwen·RAG·Agent·Discord 멘션 E2E 결과는

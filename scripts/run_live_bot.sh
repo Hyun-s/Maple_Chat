@@ -36,7 +36,10 @@ cleanup() {
   fi
 }
 trap cleanup EXIT INT TERM
-if [[ "${RUN_DAILY_SYNC:-true}" == "true" ]]; then
+# Scheduling moved to systemd (maple-chat-daily-sync.timer) so the crawl keeps
+# running even when the bot is offline. Set RUN_DAILY_SYNC=true only where no
+# systemd user session exists, and never alongside the timer.
+if [[ "${RUN_DAILY_SYNC:-false}" == "true" ]]; then
   "$ROOT_DIR/scripts/daily_sync_loop.sh" &
   daily_sync_pid=$!
 fi

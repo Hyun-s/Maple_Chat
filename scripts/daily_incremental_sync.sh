@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
 # Daily ID-deduplicated community sync: all recent posts first, then one backfill page.
+#
+# Knobs: DAILY_SYNC_BOARD_IDS (approved subset), DAILY_LATEST_MAX_SCAN_PAGES,
+# DAILY_BACKFILL_PAGES_PER_BOARD (0 = discovery only), DAILY_CRAWL_RETRIES,
+# DAILY_CRAWL_RETRY_DELAY, FULL_BACKFILL_TARGET_PAGE.
 
 set +x
 set -Eeuo pipefail
@@ -10,12 +14,34 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT_DIR/scripts/_local_env.sh"
 cd "$ROOT_DIR"
 
-readonly -a BOARDS=(2294 2295 2296 2297 2298 2300 2304)
+readonly -a APPROVED_BOARDS=(2294 2295 2296 2297 2298 2300 2304)
 latest_max_pages="${DAILY_LATEST_MAX_SCAN_PAGES:-20}"
 target_page="${FULL_BACKFILL_TARGET_PAGE:-200}"
 retry_count="${DAILY_CRAWL_RETRIES:-5}"
 retry_delay="${DAILY_CRAWL_RETRY_DELAY:-30}"
 crawl_lock_file="${LIVE_CRAWL_LOCK_FILE:-/tmp/maple-chat-live-crawl.lock}"
+crawl_priority_file="${LIVE_CRAWL_PRIORITY_FILE:-/tmp/maple-chat-live-crawl.priority}"
+index_lock_file="${INDEX_LOCK_FILE:-/tmp/maple-chat-index.lock}"
+# Historical pages are the backfill worker's job; 0 keeps this run discovery-only.
+backfill_pages="${DAILY_BACKFILL_PAGES_PER_BOARD:-1}"
+
+# A caller may narrow a run to part of the approved board set (verification, a
+# single board after a failure) but never widen the approved crawl scope.
+declare -a BOARDS=()
+if [[ -n "${DAILY_SYNC_BOARD_IDS:-}" ]]; then
+  read -r -a BOARDS <<< "${DAILY_SYNC_BOARD_IDS//,/ }"
+  for board in "${BOARDS[@]}"; do
+    case " ${APPROVED_BOARDS[*]} " in
+      *" ${board} "*) ;;
+      *)
+        echo "DAILY_SYNC_BOARD_IDS contains unapproved board: $board" >&2
+        exit 2
+        ;;
+    esac
+  done
+else
+  BOARDS=("${APPROVED_BOARDS[@]}")
+fi
 
 require_uint() {
   local name="$1" value="$2" maximum="$3"
@@ -25,10 +51,23 @@ require_uint() {
   fi
 }
 
+index_lock_is_held() {
+  # The supervised indexer drains the whole backlog inside one lock hold, so
+  # queueing behind it here would keep the crawl lock and stall the backfill too.
+  (
+    exec 9>"$1" || exit 0
+    ! flock -n 9
+  )
+}
+
 require_uint DAILY_LATEST_MAX_SCAN_PAGES "$latest_max_pages" 100
 require_uint FULL_BACKFILL_TARGET_PAGE "$target_page" 10000
 require_uint DAILY_CRAWL_RETRIES "$retry_count" 20
 require_uint DAILY_CRAWL_RETRY_DELAY "$retry_delay" 3600
+if ! [[ "$backfill_pages" =~ ^[0-9]+$ ]] || (( backfill_pages > 20 )); then
+  echo "DAILY_BACKFILL_PAGES_PER_BOARD must be an integer between 0 and 20" >&2
+  exit 2
+fi
 
 start_database
 
@@ -45,6 +84,11 @@ require_live_crawl(
 )
 print("Daily incremental full-backfill approval gate passed")
 PY
+
+# Raise the priority flag before queueing so the backfill worker stops injecting new
+# slices ahead of this run, then take the shared crawl lock.
+printf '%s\n' "$$" > "$crawl_priority_file"
+trap 'rm -f "$crawl_priority_file"' EXIT
 
 exec 8>"$crawl_lock_file"
 flock 8
@@ -123,9 +167,11 @@ checkpoint() {
 failures=0
 declare -A latest_succeeded=()
 
+echo "[$(date --iso-8601=seconds)] Daily sync starting for boards: ${BOARDS[*]} (historical pages per board: $backfill_pages)"
+
 # Phase 1 has strict priority: finish recent-ID discovery for every board before
 # any historical checkpoint is advanced. Continue until a fully-known page marks
-# the boundary between new arrivals and data already stored, with a safety bound.
+# the known-ID boundary between new arrivals and data already stored, with a safety bound.
 for board in "${BOARDS[@]}"; do
   latest_succeeded[$board]=1
   echo "[$(date --iso-8601=seconds)] Board $board: collecting all newly listed articles"
@@ -149,9 +195,12 @@ for board in "${BOARDS[@]}"; do
   done
 done
 
-# Phase 2 is lower priority and strictly bounded to one historical listing page
-# per board. If recent discovery failed, skip that board's backfill for this run.
+# Phase 2 is lower priority and strictly bounded per board. If recent discovery
+# failed, skip that board's historical page for this run.
 for board in "${BOARDS[@]}"; do
+  if (( backfill_pages == 0 )); then
+    continue
+  fi
   if [[ "${latest_succeeded[$board]}" != "1" ]]; then
     echo "[$(date --iso-8601=seconds)] Board $board: skipping backfill because latest sync failed" >&2
     continue
@@ -160,16 +209,20 @@ for board in "${BOARDS[@]}"; do
   if [[ "$complete" == "true" ]] || (( next_page > target_page )); then
     continue
   fi
-  echo "[$(date --iso-8601=seconds)] Board $board: continuing one backfill page at $next_page"
+  echo "[$(date --iso-8601=seconds)] Board $board: continuing $backfill_pages historical page(s) at $next_page"
   if ! run_with_retry "board $board backfill page $next_page" \
-    crawl --board "$board" --start-page "$next_page" --max-pages 1 \
+    crawl --board "$board" --start-page "$next_page" --max-pages "$backfill_pages" \
       --resume --skip-existing; then
     failures=1
   fi
 done
 
 conda_run maple-chat sync-knowledge
-"$ROOT_DIR/scripts/index_with_gpu_handoff.sh"
+if index_lock_is_held "$index_lock_file"; then
+  echo "[$(date --iso-8601=seconds)] Dedicated indexer holds $index_lock_file; it will embed the newly stored rows"
+else
+  "$ROOT_DIR/scripts/index_with_gpu_handoff.sh"
+fi
 mkdir -p "$ROOT_DIR/logs"
 conda_run maple-chat audit-knowledge >>"$ROOT_DIR/logs/knowledge-audit.jsonl"
 

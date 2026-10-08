@@ -181,11 +181,34 @@ def test_daily_sync_uses_id_deduplication_and_continues_bounded_backfill() -> No
     assert "--skip-existing" in incremental
     assert "--preserve-backfill-checkpoint" in incremental
     assert "DAILY_LATEST_MAX_SCAN_PAGES" in incremental
-    assert "continuing one backfill page at $next_page" in incremental
+    assert "historical page(s) at $next_page" in incremental
     assert 'for board in "${BOARDS[@]}"' in incremental
     assert "index_with_gpu_handoff.sh" in incremental
     assert "flock 8" in incremental
     assert "flock 9" in backfill_script
+    # The daily job must stay a discovery pass unless an operator opts in, and it
+    # must hand indexing to the dedicated indexer instead of queueing behind it.
+    assert "DAILY_BACKFILL_PAGES_PER_BOARD" in incremental
+    assert "index_lock_is_held" in incremental
+
+
+def test_daily_sync_is_scheduled_by_systemd_and_indexing_is_a_supervised_loop() -> None:
+    timer = (ROOT / "deploy/systemd/maple-chat-daily-sync.timer").read_text(encoding="utf-8")
+    service = (ROOT / "deploy/systemd/maple-chat-daily-sync.service").read_text(encoding="utf-8")
+    indexer = (ROOT / "deploy/systemd/maple-chat-index.service").read_text(encoding="utf-8")
+    bot = (ROOT / "scripts/run_live_bot.sh").read_text(encoding="utf-8")
+
+    assert "OnCalendar=*-*-* 05:00:00" in timer
+    assert "Persistent=true" in timer
+    assert "maple-chat-daily-sync.service" in timer
+    assert "maple-chat-daily-sync.sh" in service or "daily_incremental_sync.sh" in service
+    assert "DAILY_BACKFILL_PAGES_PER_BOARD=0" in service
+    assert "TimeoutStartSec=infinity" in service
+    # One scheduler only: the bot must not keep its own in-process crawl loop.
+    assert "RUN_DAILY_SYNC:-false" in bot
+    # The indexer exits 7 once its retries are spent, so it needs a supervisor
+    # that keeps coming back until the backlog is actually empty.
+    assert "Restart=always" in indexer
 
 
 def test_official_patch_notes_have_a_weekly_thursday_scheduler_and_separate_lock() -> None:
