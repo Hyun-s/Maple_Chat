@@ -8,7 +8,9 @@ from maple_chat.retrieval import hybrid
 from maple_chat.retrieval.evidence import (
     DEFAULT_RERANK_MAX_CHARS,
     article_source_key,
+    claim_bearing_text,
     evidence_group_key,
+    question_context_text,
     rerank_document,
 )
 from maple_chat.retrieval.hybrid import (
@@ -531,3 +533,92 @@ async def test_lexical_candidates_widen_the_parallel_scan_before_the_trigram_sor
     assert executed[1:3] == list(hybrid._LEXICAL_SCAN_GUC_STATEMENTS)
     assert "similarity" in executed[-1]
     assert "ORDER BY" in executed[-1]
+
+
+# --- evidence.py header/body slicing and role-separation edge branches ---
+
+
+def test_claim_bearing_text_keeps_full_text_when_no_comment_boundary_exists() -> None:
+    candidate = Candidate(
+        "c1",
+        "comment:article:2298:1:771487",
+        "장비 세팅 없이 캐릭터 레벨만으로 클리어했습니다.",
+        {"qa_branch": True, "title": "제논 질문", "board": "해적"},
+    )
+
+    assert claim_bearing_text(candidate) == candidate.text
+    assert question_context_text(candidate) is None
+
+
+def test_question_context_requires_the_marker_before_the_comment_boundary() -> None:
+    without_marker = Candidate(
+        "c1",
+        "comment:article:2298:1:771487",
+        "댓글 1: 장비 세팅이 먼저입니다.",
+        {"qa_branch": True},
+    )
+    marker_after_boundary = Candidate(
+        "c2",
+        "comment:article:2298:1:771489",
+        "댓글 1: 장비 세팅이 먼저입니다.\n질문 문맥: 나중에 붙은 인용",
+        {"qa_branch": True},
+    )
+
+    assert question_context_text(without_marker) is None
+    assert question_context_text(marker_after_boundary) is None
+
+
+def test_article_source_key_is_none_without_a_parent_article_reference() -> None:
+    orphan = Candidate(
+        "c1",
+        "comment:771487",
+        "질문 문맥: 제논 하드 메이린 최소컷인가요?\n\n댓글 1: 레벨만 올리세요.",
+        {"qa_branch": True},
+    )
+
+    assert article_source_key(orphan) is None
+    assert evidence_group_key(orphan) == "source:comment:771487"
+
+
+def test_rerank_document_drops_the_body_when_the_header_alone_fills_the_window() -> None:
+    title = "아주 긴 제논 질문 제목" * 30
+    candidate = Candidate(
+        "c1",
+        "comment:article:2298:1:771487",
+        "질문 문맥: 무시되는 질문\n\n댓글 1: 장비 세팅",
+        {"qa_branch": True, "title": title, "board": "해적"},
+    )
+
+    document = rerank_document(candidate, max_chars=40)
+
+    assert document == f"제목: {title}\n게시판: 해적\n댓글 답변:\n"[:40]
+    assert "장비 세팅" not in document
+
+
+def test_rerank_document_front_slices_a_headerless_body() -> None:
+    body = "제논 하드 메이린 클리어 후기입니다. " * 100
+    candidate = Candidate("a1", "article:2298:2", body, {})
+
+    document = rerank_document(candidate, max_chars=120)
+
+    assert document == body[:120]
+    assert len(document) == 120
+
+
+def test_rerank_document_extracts_a_header_without_a_blank_line() -> None:
+    header = "제목: 제논 질문\n게시판: 도적\n분류: 팁\n"
+    candidate = Candidate("a1", "article:2298:3", header + "장비 세팅을 먼저 맞추세요. " * 100, {})
+
+    document = rerank_document(candidate, max_chars=90)
+
+    assert document.startswith(header)
+    assert len(document) == 90
+
+
+def test_rerank_document_falls_back_to_a_slice_for_a_header_only_chunk() -> None:
+    text = "제목: " + "매우 긴 제논 질문 제목 " * 200
+    candidate = Candidate("a1", "article:2298:4", text, {})
+
+    document = rerank_document(candidate)
+
+    assert document == text[:DEFAULT_RERANK_MAX_CHARS]
