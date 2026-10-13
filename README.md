@@ -87,9 +87,10 @@ scripts/sync_live.sh
 
 ### BGE-M3 HTTP embedding
 
-기존 동작은 `EMBEDDING_PROVIDER=local`이며 immutable commit으로 고정한 로컬
-SentenceTransformer를 오프라인으로 로드합니다. DCM이 BGE-M3 TEI 서비스를 실행 중이면 다음
-설정으로 동일한 revision 계약을 유지하면서 HTTP embedding을 사용할 수 있습니다.
+`EMBEDDING_PROVIDER`와 `RERANKER_PROVIDER`는 모든 프로세스 역할에서 `remote`가 필수입니다.
+프로세스 안에서 SentenceTransformer나 cross-encoder를 직접 로드하던 경로는 제거됐고
+(`bde99a6`), 어긋난 설정은 시작 시점에 거부됩니다. DCM이 BGE-M3 TEI 서비스를 실행 중이면
+다음 설정으로 동일한 revision 계약을 유지하면서 HTTP embedding을 사용할 수 있습니다.
 
 ```dotenv
 EMBEDDING_PROVIDER=remote
@@ -105,9 +106,10 @@ EMBEDDING_MODEL_COMMIT=5617a9f61b028005a4858fdac845db406aefb181
 `model_sha`가 설정한 model/commit과 정확히 같은지 확인한 뒤 `/v1/embeddings`에 `model`, `input`,
 `encoding_format` 표준 OpenAI 요청 필드만 보냅니다. 응답의 순서, 개수, 유한값,
 1024차원, L2 정규화를 검증합니다. OpenAI-compatible 응답 자체는 Hugging Face commit을 증명하지 않으므로
-Maple Chat은 TEI `/info` attestation이 실패하면 embedding 요청을 보내지 않습니다. 원격 오류가 발생했을 때
-GPU 로컬 모델을 갑자기 로드하지 않도록 자동 fallback은 하지 않습니다. 명시적으로
-`EMBEDDING_PROVIDER=local`로 되돌리는 것이 안전한 fallback입니다.
+Maple Chat은 TEI `/info` attestation이 실패하면 embedding 요청을 보내지 않습니다. 원격 오류가 발생해도
+GPU 로컬 모델을 갑자기 로드하지 않도록 자동 fallback은 하지 않습니다. `EMBEDDING_PROVIDER=local`은
+설정만으로 되돌릴 수 있는 폴백이 아닙니다 — 오프라인 경로가 실제로 필요하면 그 제거를 되돌리는
+코드 revert가 필요합니다.
 
 호스트에서 실행하는 Maple Chat은 위 loopback URL을 사용합니다. 앱을 컨테이너에서 실행할 때는
 Compose의 app 서비스가 외부 `dcm-model-plane` network에 참여하고 기본값

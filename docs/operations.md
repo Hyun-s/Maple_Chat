@@ -166,8 +166,9 @@ The client fails closed on
 HTTP errors, `/info` model ID or SHA mismatch, response model mismatch, wrong count/order,
 non-finite values, non-1024 dimensions, or a vector
 whose L2 norm is not approximately one. It never silently falls back and allocates a local GPU
-model. To use the existing offline SentenceTransformer path intentionally, set
-`EMBEDDING_PROVIDER=local`; only that local CUDA path invokes `gpu-job`.
+model. The offline SentenceTransformer path was removed (`bde99a6`), so
+`EMBEDDING_PROVIDER=local` is rejected for every role at startup and the `gpu-job` local CUDA
+handoff no longer runs; both collection scripts now fail fast before touching the database.
 
 Before each batch, Maple Chat requires TEI `/info` to report model ID `BAAI/bge-m3` and model SHA
 `5617a9f61b028005a4858fdac845db406aefb181`; no embedding request is sent if either differs. Keep
