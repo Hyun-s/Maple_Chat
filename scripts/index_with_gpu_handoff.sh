@@ -11,7 +11,7 @@ source "$ROOT_DIR/scripts/_local_env.sh"
 cd "$ROOT_DIR"
 
 batch_size="${INDEX_BATCH_SIZE:-32}"
-embedding_provider="${EMBEDDING_PROVIDER:-local}"
+embedding_provider="${EMBEDDING_PROVIDER:-remote}"
 embedding_device="${INDEX_EMBEDDING_DEVICE:-cuda}"
 index_lock_file="${INDEX_LOCK_FILE:-/tmp/maple-chat-index.lock}"
 max_batches_per_source="${INDEX_MAX_BATCHES_PER_SOURCE:-8}"
@@ -29,8 +29,9 @@ if ! [[ "$max_batches_per_source" =~ ^[0-9]+$ ]]; then
   echo "INDEX_MAX_BATCHES_PER_SOURCE must be a non-negative integer" >&2
   exit 2
 fi
-if [[ "$embedding_provider" != "local" && "$embedding_provider" != "remote" ]]; then
-  echo "EMBEDDING_PROVIDER must be local or remote" >&2
+if [[ "$embedding_provider" != "remote" ]]; then
+  echo "EMBEDDING_PROVIDER must be remote: the in-process BGE-M3 model was removed," >&2
+  echo "so '$embedding_provider' aborts inside maple-chat index anyway." >&2
   exit 2
 fi
 
@@ -113,17 +114,4 @@ if [[ "$embedding_provider" == "remote" ]]; then
       break
     fi
   done
-elif [[ "$embedding_device" == "cuda" && -x "$gpu_manager" ]]; then
-  "$gpu_manager" gpu-job run \
-    --drain-timeout "${INDEX_LLM_DRAIN_TIMEOUT:-1800}" \
-    --ready-timeout "${INDEX_LLM_READY_TIMEOUT:-1800}" \
-    -- "$CONDA_BIN" run --no-capture-output -n "$CONDA_ENV" \
-      maple-chat index --batch-size "$batch_size"
-else
-  if [[ "$embedding_device" == "cuda" ]] && \
-    curl -fsS --connect-timeout 1 --max-time 2 http://127.0.0.1:8001/health >/dev/null 2>&1; then
-    echo "A local LLM is using GPU, but no gpu-job manager was found at $gpu_manager" >&2
-    exit 6
-  fi
-  conda_run maple-chat index --batch-size "$batch_size"
 fi

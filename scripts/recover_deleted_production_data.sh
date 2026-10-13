@@ -25,7 +25,7 @@ Environment overrides:
   RECOVERY_CRAWL_RETRIES=5        Retries for a transient failed crawl slice
   RECOVERY_CRAWL_RETRY_DELAY=30   Base retry delay in seconds
   RECOVERY_INDEX_BATCH_SIZE=32    BGE-M3 embedding batch size
-  EMBEDDING_PROVIDER=local        local or remote HTTP embedding provider
+  EMBEDDING_PROVIDER=remote       TEI HTTP embedding provider (the only supported path)
   RECOVERY_EMBEDDING_DEVICE=cuda  cuda (fast) or cpu (does not stop vLLM)
   RECOVERY_PATCH_DAYS=365         Official patch-note window
   RECOVERY_PATCH_MAX_PAGES=60     Maximum official listing pages
@@ -96,7 +96,7 @@ page_batch="${RECOVERY_PAGE_BATCH:-10}"
 crawl_retries="${RECOVERY_CRAWL_RETRIES:-5}"
 crawl_retry_delay="${RECOVERY_CRAWL_RETRY_DELAY:-30}"
 index_batch_size="${RECOVERY_INDEX_BATCH_SIZE:-32}"
-embedding_provider="${EMBEDDING_PROVIDER:-local}"
+embedding_provider="${EMBEDDING_PROVIDER:-remote}"
 embedding_device="${RECOVERY_EMBEDDING_DEVICE:-cuda}"
 patch_days="${RECOVERY_PATCH_DAYS:-365}"
 patch_max_pages="${RECOVERY_PATCH_MAX_PAGES:-60}"
@@ -124,8 +124,9 @@ if [[ "$embedding_device" != "cuda" && "$embedding_device" != "cpu" ]]; then
   echo "RECOVERY_EMBEDDING_DEVICE must be cuda or cpu" >&2
   exit 2
 fi
-if [[ "$embedding_provider" != "local" && "$embedding_provider" != "remote" ]]; then
-  echo "EMBEDDING_PROVIDER must be local or remote" >&2
+if [[ "$embedding_provider" != "remote" ]]; then
+  echo "EMBEDDING_PROVIDER must be remote: the in-process BGE-M3 model was removed," >&2
+  echo "so '$embedding_provider' aborts inside maple-chat index anyway." >&2
   exit 2
 fi
 if [[ "$backup_enabled" != "true" && "$backup_enabled" != "false" ]]; then
@@ -357,20 +358,6 @@ echo "All source collection completed; starting the single bulk BGE-M3 indexing 
 export EMBEDDING_PROVIDER="$embedding_provider"
 export EMBEDDING_DEVICE="$embedding_device"
 if [[ "$embedding_provider" == "remote" ]]; then
-  conda_run maple-chat index --batch-size "$index_batch_size"
-elif [[ "$embedding_device" == "cuda" && -x "$gpu_manager" ]]; then
-  "$gpu_manager" gpu-job run \
-    --drain-timeout "${RECOVERY_LLM_DRAIN_TIMEOUT:-1800}" \
-    --ready-timeout "${RECOVERY_LLM_READY_TIMEOUT:-1800}" \
-    -- "$CONDA_BIN" run --no-capture-output -n "$CONDA_ENV" \
-      maple-chat index --batch-size "$index_batch_size"
-else
-  if [[ "$embedding_device" == "cuda" ]] && \
-    curl -fsS --connect-timeout 1 --max-time 2 http://127.0.0.1:8001/health >/dev/null 2>&1; then
-    echo "A local LLM is using GPU, but no gpu-job manager was found at $gpu_manager" >&2
-    echo "Stop the local LLM or set MAPLE_CHAT_LLM_MANAGER before rerunning." >&2
-    exit 6
-  fi
   conda_run maple-chat index --batch-size "$index_batch_size"
 fi
 

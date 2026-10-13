@@ -141,10 +141,11 @@ def test_remote_embedding_is_explicit_and_skips_exclusive_gpu_handoff() -> None:
             "5617a9f61b028005a4858fdac845db406aefb181}"
         )
     for script in (index_handoff, recovery):
-        remote_branch = script.index('if [[ "$embedding_provider" == "remote" ]]')
-        gpu_job_branch = script.index('elif [[ "$embedding_device" == "cuda"')
-        assert remote_branch < gpu_job_branch
-        assert "EMBEDDING_PROVIDER must be local or remote" in script
+        # The in-process model path was removed (bde99a6), so remote is the only
+        # provider the scripts can reach and the exclusive GPU handoff is gone.
+        assert 'embedding_provider="${EMBEDDING_PROVIDER:-remote}"' in script
+        assert "EMBEDDING_PROVIDER must be remote" in script
+        assert 'elif [[ "$embedding_device" == "cuda"' not in script
 
 
 def test_integration_database_reset_requires_an_explicit_isolated_database_guard() -> None:
@@ -251,7 +252,6 @@ def test_production_recovery_rebuilds_every_reproducible_data_layer() -> None:
         "--no-index",
         "crawl-live",
         "maple-chat index",
-        "gpu-job run",
         "verify_recovery_state.py",
         "BACKUP_INCLUDE_VECTORS=true",
         "RECOVERY_CRAWL_RETRIES",
