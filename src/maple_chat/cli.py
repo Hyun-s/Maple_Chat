@@ -156,14 +156,6 @@ def build_parser() -> argparse.ArgumentParser:
         "audit-knowledge",
         help="compare collected terminology uses with curated canonical relations",
     )
-    inv_cache = subparsers.add_parser(
-        "invalidate-cache",
-        help="invalidate all or patch-specific entries in the Redis semantic cache",
-    )
-    inv_cache.add_argument("--patch-version", type=str, default=None, help="target patch version")
-    inv_cache.add_argument(
-        "--query", type=str, default=None, help="target single query to invalidate"
-    )
     subparsers.add_parser("preflight", help="check database, local LLM, and model configuration")
     subparsers.add_parser("run-bot", help="start the single-guild Discord bot")
     return parser
@@ -466,39 +458,12 @@ async def _dispatch(args: argparse.Namespace) -> None:
         await _summarize_patch_reactions(args)
     elif args.command == "audit-knowledge":
         await _audit_knowledge()
-    elif args.command == "invalidate-cache":
-        await _invalidate_cache(args)
     elif args.command == "preflight":
         await _preflight()
     elif args.command == "run-bot":
         await run_discord_bot(load_settings(ProcessRole.BOT))
     else:  # pragma: no cover - argparse prevents this
         raise RuntimeError("unknown command")
-
-
-async def _invalidate_cache(args: argparse.Namespace) -> None:
-    from maple_chat.qa.semantic_cache import RedisSemanticCache
-
-    settings = load_settings(ProcessRole.BOT)
-    cache = RedisSemanticCache(
-        redis_url=settings.redis_url,
-        index_name=settings.semantic_cache_index_name,
-        key_prefix=settings.semantic_cache_key_prefix,
-        similarity_threshold=settings.semantic_cache_similarity_threshold,
-        ttl_seconds=settings.semantic_cache_ttl_seconds,
-    )
-    try:
-        if args.query:
-            deleted = await cache.delete_by_query(args.query)
-            print(f"deleted query cache: {deleted}")
-        elif args.patch_version:
-            count = await cache.invalidate_on_patch(args.patch_version)
-            print(f"invalidated {count} cache entries for patch {args.patch_version}")
-        else:
-            count = await cache.invalidate_all()
-            print(f"invalidated {count} semantic cache entries")
-    finally:
-        await cache.aclose()
 
 
 def main(argv: Sequence[str] | None = None) -> int:

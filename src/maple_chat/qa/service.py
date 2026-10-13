@@ -105,8 +105,6 @@ class AnswerProcessingMetrics:
     graph_seconds: float | None = None
     persistence_seconds: float | None = None
     regeneration_reason: str | None = None
-    cache_hit: bool = False
-    cache_similarity: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -118,7 +116,6 @@ class AnswerOutcome:
     knowledge_facts: tuple[KnowledgeFact, ...] = ()
     duplicate: bool = False
     metrics: AnswerProcessingMetrics | None = None
-    cached: bool = False
 
     @property
     def has_sources(self) -> bool:
@@ -263,8 +260,6 @@ def build_processing_metrics(
     graph_seconds: float | None = None,
     persistence_seconds: float | None = None,
     regeneration_reason: str | None = None,
-    cache_hit: bool = False,
-    cache_similarity: float | None = None,
 ) -> AnswerProcessingMetrics:
     combined = GenerationMetrics.combine(generation_metrics)
     if combined is None:
@@ -286,8 +281,6 @@ def build_processing_metrics(
             graph_seconds=graph_seconds,
             persistence_seconds=persistence_seconds,
             regeneration_reason=regeneration_reason,
-            cache_hit=cache_hit,
-            cache_similarity=cache_similarity,
         )
     return AnswerProcessingMetrics(
         input_tokens=combined.prompt_tokens,
@@ -307,29 +300,10 @@ def build_processing_metrics(
         graph_seconds=graph_seconds,
         persistence_seconds=persistence_seconds,
         regeneration_reason=regeneration_reason,
-        cache_hit=cache_hit,
-        cache_similarity=cache_similarity,
     )
 
 
 def processing_metrics_footer(metrics: AnswerProcessingMetrics) -> str:
-    if metrics.cache_hit:
-        sim_str = (
-            f"{metrics.cache_similarity * 100:.1f}%"
-            if metrics.cache_similarity is not None
-            else "96.0%+"
-        )
-        embed_str = (
-            f" · 임베딩 {metrics.embedding_seconds:.3f}초"
-            if metrics.embedding_seconds is not None
-            else ""
-        )
-        return (
-            "---\n"
-            f"처리 지표: 시맨틱 캐시 적중 (유사도 {sim_str}) · 모델 호출 0회 (GPU 절감)\n"
-            f"속도: 즉시 반환 · 전체 {metrics.total_seconds:.3f}초{embed_str}"
-        )
-
     def rate(value: float | None) -> str:
         return "N/A" if value is None else f"{value:,.1f} tok/s"
 

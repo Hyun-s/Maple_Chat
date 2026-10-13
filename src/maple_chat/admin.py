@@ -212,23 +212,3 @@ class AdminService:
             metadata={"channel_count": len(channel_ids), "role_count": len(role_ids)},
         )
 
-    async def invalidate_semantic_cache(
-        self,
-        session: AsyncSession,
-        *,
-        actor_id: int,
-        cache: Any,
-        reason: str = "manual",
-    ) -> int:
-        self.require_owner(actor_id)
-        count = int(await cache.invalidate_all())
-        await self.audit(
-            session,
-            actor_id=actor_id,
-            action="cache.invalidate",
-            target="semantic_cache",
-            result="succeeded",
-            metadata={"invalidated_count": count, "reason": reason},
-        )
-        return count
-

@@ -166,34 +166,6 @@ class Settings(BaseSettings):
         validation_alias="FIXTURE_ROOT",
     )
 
-    redis_url: str = Field(
-        default="redis://127.0.0.1:56379/0",
-        validation_alias="REDIS_URL",
-    )
-    semantic_cache_enabled: bool = Field(
-        default=True,
-        validation_alias="SEMANTIC_CACHE_ENABLED",
-    )
-    semantic_cache_similarity_threshold: float = Field(
-        default=0.96,
-        ge=0.0,
-        le=1.0,
-        validation_alias="SEMANTIC_CACHE_SIMILARITY_THRESHOLD",
-    )
-    semantic_cache_ttl_seconds: int = Field(
-        default=7 * 86400,
-        ge=60,
-        validation_alias="SEMANTIC_CACHE_TTL_SECONDS",
-    )
-    semantic_cache_index_name: str = Field(
-        default="maple_chat_semantic_cache",
-        validation_alias="SEMANTIC_CACHE_INDEX_NAME",
-    )
-    semantic_cache_key_prefix: str = Field(
-        default="maple_chat:cache:",
-        validation_alias="SEMANTIC_CACHE_KEY_PREFIX",
-    )
-
     @field_validator("crawler_contact", "discord_guild_id", mode="before")
     @classmethod
     def normalize_optional_string(cls, value: object) -> object:
@@ -289,18 +261,6 @@ class Settings(BaseSettings):
         ):
             raise ValueError("RERANKER_BASE_URL must target the approved local model boundary")
 
-        redis_parsed = urlparse(self.redis_url)
-        allowed_redis_hosts = allowed_llm_hosts | {"redis"}
-        if (
-            redis_parsed.scheme not in {"redis", "rediss"}
-            or redis_parsed.hostname not in allowed_redis_hosts
-            or redis_parsed.username is not None
-            or redis_parsed.password is not None
-            or redis_parsed.query
-            or redis_parsed.fragment
-        ):
-            raise ValueError("REDIS_URL must target the approved local model/cache boundary")
-
         # Every process role (bot, scheduler, crawler-worker, index-worker) must use the
         # GPU-backed sidecars: the daily bulk reindex re-created the CPU flood whenever a
         # role defaulted to the in-process local models.
@@ -338,10 +298,6 @@ class Settings(BaseSettings):
             "reranker_provider": self.reranker_provider,
             "reranker_base_url": self.reranker_base_url,
             "reranker_remote_model": self.reranker_remote_model,
-            "redis_url": self.redis_url,
-            "semantic_cache_enabled": self.semantic_cache_enabled,
-            "semantic_cache_similarity_threshold": self.semantic_cache_similarity_threshold,
-            "semantic_cache_ttl_seconds": self.semantic_cache_ttl_seconds,
             "crawler_user_agent": self.crawler_user_agent,
             "crawler_contact": self.crawler_contact,
             "pii_hash_salt": "<redacted>",
