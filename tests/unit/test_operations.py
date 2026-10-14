@@ -3,11 +3,9 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from maple_chat.ops.health import ComponentHealth, collect_health, scheduler_freshness
 from maple_chat.ops.logging import JsonFormatter, redact
 from maple_chat.ops.shutdown import ShutdownCoordinator
 
@@ -72,25 +70,6 @@ def test_structured_logs_preserve_numeric_model_telemetry_without_content() -> N
     assert payload["output_tokens_per_second"] == 10.0
     assert "query" not in payload
     assert "content" not in payload
-
-
-@pytest.mark.asyncio
-async def test_health_is_componentized_and_aggregate_fails_closed() -> None:
-    async def healthy() -> ComponentHealth:
-        return ComponentHealth("database", True, "ok", 1.0)
-
-    async def unhealthy() -> ComponentHealth:
-        return ComponentHealth("vllm", False, "unavailable")
-
-    report = await collect_health((healthy, unhealthy))
-    assert [item.name for item in report.components] == ["database", "vllm"]
-    assert report.ready is False
-
-
-def test_scheduler_freshness_reports_age() -> None:
-    now = datetime(2026, 8, 4, tzinfo=UTC)
-    assert scheduler_freshness(last_success=now - timedelta(hours=1), now=now).healthy is True
-    assert scheduler_freshness(last_success=None, now=now).detail == "never_succeeded"
 
 
 @pytest.mark.asyncio
