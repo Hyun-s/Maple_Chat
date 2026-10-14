@@ -161,8 +161,8 @@ scripts/run_full_backfill.sh
 수집·색인이 끝난 동일한 KST 날짜의 커뮤니티 패치 반응을 공식 직업 카탈로그의 하위 직업마다
 개별 검색·개별 요약하려면 다음을 실행합니다. 제논처럼 두 직업군에 속하는 직업은 관련 게시판을
 모두 검색하되 보고서는 한 번만 만들며, 결과는 `reports/patch-reactions/YYYY-MM-DD/` 아래에
-48개 개별 Markdown 파일과 진행 상황 manifest로 저장됩니다. 중단 후 재실행하면 완성된 직업
-파일은 건너뜁니다.
+48개 개별 Markdown 파일과 진행 상황 manifest로 저장됩니다. 이 산출물은 로컬에서만 관리하며 git에는
+넣지 않습니다. 중단 후 재실행하면 완성된 직업 파일은 건너뜁니다.
 
 ```bash
 scripts/summarize_patch_reactions.sh 2026-09-10
@@ -184,12 +184,18 @@ scripts/summarize_patch_reactions.sh 2026-09-10
 ## Conda와 검증
 
 호스트 `/home/hyuns/anaconda3`의 전용 `maple-chat` 환경만 사용하며 `base`는 변경하지
-않습니다. 환경에는 CUDA PyTorch, GPU BGE embedding/reranker, Tesseract `kor+eng`, OCR
-adapter가 포함됩니다.
+않습니다. 환경에는 Tesseract `kor+eng`와 OCR adapter, 그리고 pinned된 CUDA PyTorch가
+들어가 있습니다. 다만 BGE-M3 임베딩과 reranker는 DCM이 기동하는 원격 TEI 사이드카가
+공급하므로, 이 환경이 두 모델을 프로세스 안으로 직접 로드하지는 않습니다.
 
 ```bash
 conda run -n maple-chat scripts/verify_all.sh
 ```
+
+다만 이 호스트(aarch64)에서는 `verify_all.sh`가 2단계 `pip check`에서 알려진
+`nvidia-cusparselt-cu13` wheel-tag 오탐으로 멈춥니다. 저장소 결함이 아니라 플랫폼 조건이고
+변경 없는 체크아웃에서도 동일하게 재현됩니다. 상세한 대체 실행 절차는 development 문서의
+Environment ownership 절에 있습니다.
 
 ## 구현 구성
 

@@ -19,11 +19,22 @@ conda run -n maple-chat pytest -q tests/unit
 conda run -n maple-chat scripts/verify_all.sh
 ```
 
-The Conda environment includes the ML and OCR execution profiles. Both adapters are fail-closed:
-model loading uses an immutable revision with
-`local_files_only=True`, and OCR executes through the host's local Tesseract binary. Production
-model artifacts are cached locally. `scripts/setup_local.sh` verifies CPU-only Torch and the
-Tesseract executable without modifying `base`.
+`scripts/verify_all.sh` is the full gate: it runs the G001 compliance checks (secret scan,
+`pip check`, `pip-audit`, `pip-licenses`, Ruff, Ruff format, MyPy, unit tests, compose config),
+the fixed evaluation fixture, `verify_g002.sh`, and `verify_g007_restore.sh`. On this aarch64
+host `pip check` aborts it on the known `nvidia-cusparselt-cu13 0.8.1 is not supported on this
+platform` wheel-tag false positive. `scripts/setup_local.sh` already whitelists that one line;
+`verify_g001.sh` does not, so the whole script stops at step two. This is a platform condition,
+not a repository defect, and it reproduces on an unmodified checkout. To run the equivalent checks
+now, execute the individual G001 steps and `scripts/verify_g002.sh` (the behaviour and coverage
+gate, which passes locally).
+
+The Conda environment installs the OCR execution profile and the pinned CUDA PyTorch that the
+setup script verifies. Embedding and reranking are not loaded in-process: they come from the
+remote TEI sidecars, so no local model artifact is read or cached by Maple Chat code. OCR is
+fail-closed and executes through the host's local Tesseract binary. `scripts/setup_local.sh`
+checks that CUDA is available to the pinned Torch build and that Tesseract is on `PATH`, without
+modifying `base`.
 
 `requirements/lock.txt` pins the verified G001 development dependency set. Update it only after
 installing the intended dependency changes in `maple-chat`, rerunning the security gates, and

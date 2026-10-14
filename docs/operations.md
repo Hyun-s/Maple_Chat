@@ -73,8 +73,14 @@ uses the Qwen3.8-27B `local-coder` service from
 
 ## Health and metrics
 
-Report bot, database, embedding/reranker, vLLM, and scheduler freshness separately. Aggregate
-readiness is true only when every configured probe is healthy. JSON logs use event codes and
+Readiness is checked on demand with `maple-chat preflight`, which prints one JSON status covering
+database connectivity, Discord channel allowlist, the active embedding revision, whether the local
+LLM answers (`ready` versus `retrieval-only`), and the live-crawl flag. There is intentionally no
+in-process aggregate health endpoint, scheduler freshness probe, or Prometheus exporter. The
+embedding and reranker sidecars are attested through their HTTP `/info` contract before any request
+is sent: the client checks `model_id` and `model_sha` against the pinned revision and reads the
+advertised `max_client_batch_size` to size its own shards. There is no separate liveness probe in
+the code path, and an `embed` call re-attests once per invocation. JSON logs use event codes and
 hashed identifiers; never attach questions, source bodies, OCR text, nicknames, authentication
 tokens, salts, or database URLs as log context. Numeric model token counts are telemetry and may be
 logged because they contain no token text or credential value.
@@ -88,9 +94,10 @@ queue and transport overhead**, not a hardware-only kernel benchmark. Output TPS
 calls the model twice is aggregated rather than hiding the first call. Retrieval-only or
 insufficient-evidence paths log zero model calls and do not add a misleading token footer.
 
-Required counters/timers include Discord result and queue latency, retrieval/rerank/LLM latency,
-insufficient-evidence and fallback counts, per-board HTTP/parser results, queue depth, backfill
-progress, and embedding throughput.
+Per-answer timers cover embedding, vector and lexical query, merge, graph, rerank, persistence,
+and model time, which is how a `total_seconds` versus `model_seconds` gap gets attributed to a
+stage. Collection and indexing runs leave per-run artifacts under `logs/` instead of exporting
+counters.
 
 ## Backup
 
