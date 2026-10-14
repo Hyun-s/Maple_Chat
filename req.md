@@ -3,6 +3,20 @@
 > 상태: 심층 인터뷰 확정본  
 > 작성 기준일: 2026-08-04 (Asia/Seoul)  
 > D-001~D-017과 본문 요구사항은 구현 계약이다. 외부 권리 승인 게이트는 코드 완료와 별도로 충족해야 한다.
+>
+> **현재 구현과 다른 조항 (2026-10-14 확인).** 아래 본문은 변경 이력이 아니라 계약 원문으로
+> 유지한다. 실제 동작이 갈라진 지점은 다음 네 가지이며, 최신 기준은 `docs/architecture.md`와
+> `docs/current-system-overview.md`를 따른다.
+>
+> 1. §11.1·§11.6의 CPU in-process 임베딩·재순위 worker → 지금은 원격 TEI 사이드카가
+>    담당하며 `EMBEDDING_PROVIDER=remote`가 모든 역할의 필수값이다. 로컬 모델 로드는 제거됐다.
+> 2. §11.1·§13·§14의 `crawl_jobs` durable queue·lease·retry·dead letter → 원문 그대로의 요구사항이고
+>    코드 primitive도 남아 있으나, enqueue를 포함해 실행 경로가 없다. 동시성 요구가 없는 단일 호스트
+>    범위에서 수집·색인은 shell loop가 CLI를 직접 호출하는 one-shot으로 대체됐다.
+> 3. §16.2의 lease 기반 graceful shutdown → worker가 없어 새 lease 획득 차단 대상이 없다.
+> 4. §11.2·§12의 OCR은 유지되지만, 그 외 Torch·CUDA wheel은 실행 환경에서 제외됐다.
+>
+> 이탈이 요구사항 변경인지 결함인지 판단이 필요하면 §2의 결정 기록 기준으로 복원·재검토한다.
 
 ## 1. 제품 개요
 
