@@ -3,8 +3,9 @@
 > **포트폴리오 포지셔닝:** AI 연구 방법론을 중심으로, 연구 결과를 재현 가능한 RAG 서비스와
 > 안전한 Tool-using Agent로 구현한 프로젝트
 >
-> 기준일: 2026-09-02  
-> 구현 상태 기준: Alembic `g010_agent_runs`, 전체 237 tests 통과, branch-aware coverage 90.47%
+> 기준일: 2026-10-14  
+> 구현 상태 기준: Alembic `g011_chunk_tsv_lexical`, unit + integration 350 tests 통과, branch-aware
+> coverage 90.39%
 
 ## 1. Project Abstract
 
@@ -86,7 +87,7 @@ retrieval과 generation error를 먼저 분리한 뒤, 충분한 hard negative�
 
 | Item | 상태 | 핵심 내용 |
 |---|---|---|
-| 한국어 도메인 corpus | 구현·운영 데이터 존재 | 게시글 19,192건, 댓글 76,803건 |
+| 한국어 도메인 corpus | 구현·운영 데이터 존재 | 게시글 63,966건, 댓글 314,603건 |
 | 구조 기반 chunking | 구현 | 목표 550, 최대 700, overlap 80 token |
 | Dense embedding | 구현 | `BAAI/bge-m3`, 1024차원, normalized vector |
 | ANN retrieval | 구현 | PostgreSQL pgvector cosine + HNSW |
@@ -126,7 +127,7 @@ retrieval과 generation error를 먼저 분리한 뒤, 충분한 hard negative�
 
 - sanitize-before-store 개인정보 정제와 salted HMAC nickname 처리
 - embedding/chunking/model revision 고정과 active revision 전환
-- PostgreSQL 기반 idempotent indexing, lease, retry, checkpoint
+- PostgreSQL 기반 idempotent indexing과 transactional outbox, 색인 단계 retry, 게시판별 수집 checkpoint
 - 답변 시점의 chunk·knowledge relation provenance 보존
 - local-only OpenAI-compatible Qwen generation 경계
 - 토큰 수, TTFT 기반 입력 TPS, 출력 TPS, 전체 latency 관측
@@ -556,12 +557,11 @@ gate로 둔다.
 ### 7.4 현재 자동 검증 결과
 
 ```text
-Unit + PostgreSQL integration tests: 237 passed
-Branch-aware coverage: 90.47%
+Unit + PostgreSQL integration tests: 350 passed
+Branch-aware coverage: 90.39%
 Alembic upgrade/downgrade/upgrade: passed
 Ruff + format: passed
-Mypy strict: 62 source files passed
-Agent/tool/routing focused unit tests: 23 passed
+Mypy strict: 64 source files passed
 Secret baseline scan: passed
 Dependency vulnerability audit: no known vulnerabilities found
 Compose configuration smoke test: passed
