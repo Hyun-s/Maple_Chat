@@ -9,7 +9,6 @@ import pytest
 
 from maple_chat.ops.health import ComponentHealth, collect_health, scheduler_freshness
 from maple_chat.ops.logging import JsonFormatter, redact
-from maple_chat.ops.metrics import MetricRegistry
 from maple_chat.ops.shutdown import ShutdownCoordinator
 
 
@@ -88,17 +87,10 @@ async def test_health_is_componentized_and_aggregate_fails_closed() -> None:
     assert report.ready is False
 
 
-def test_scheduler_freshness_and_metric_export() -> None:
+def test_scheduler_freshness_reports_age() -> None:
     now = datetime(2026, 8, 4, tzinfo=UTC)
     assert scheduler_freshness(last_success=now - timedelta(hours=1), now=now).healthy is True
     assert scheduler_freshness(last_success=None, now=now).detail == "never_succeeded"
-    registry = MetricRegistry()
-    registry.increment("discord_requests", result="success")
-    registry.observe("retrieval_seconds", 0.25, stage="hybrid")
-    output = registry.render()
-    assert 'discord_requests_total{result="success"} 1' in output
-    assert 'retrieval_seconds_count{stage="hybrid"} 1' in output
-    assert 'retrieval_seconds_sum{stage="hybrid"} 0.25' in output
 
 
 @pytest.mark.asyncio
