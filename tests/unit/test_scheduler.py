@@ -6,9 +6,7 @@ import pytest
 
 from maple_chat.scheduler.planner import (
     BOARD_NAMES,
-    next_daily_run,
     next_weekly_patch_run,
-    parse_daily_time,
     plan_round_robin_backfill,
 )
 
@@ -23,15 +21,6 @@ def test_exact_seven_board_scope_is_seed_contract() -> None:
         2300: "질문과 답변",
         2304: "팁과 노하우",
     }
-
-
-def test_daily_schedule_uses_kst_and_rolls_forward() -> None:
-    now = datetime(2026, 8, 4, 20, 0, tzinfo=UTC)
-    assert next_daily_run("05:00", now) == datetime(2026, 8, 5, 20, 0, tzinfo=UTC)
-    with pytest.raises(ValueError, match="HH:MM"):
-        parse_daily_time("invalid")
-    with pytest.raises(ValueError, match="wall-clock"):
-        parse_daily_time("04:00+09:00")
 
 
 def test_patch_note_schedule_is_thursday_0500_kst_and_rolls_weekly() -> None:

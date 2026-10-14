@@ -1,1 +1,1 @@
-"""KST daily synchronization and recent-first backfill planning."""
+"""Board seeding, checkpoint updates, round-robin backfill slicing, and KST run timing."""

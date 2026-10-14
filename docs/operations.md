@@ -190,9 +190,15 @@ answer/provenance history cannot be recreated from the remaining progress logs.
 
 ## Graceful shutdown
 
-Stop acquiring new leases, allow in-flight DB transactions to commit or roll back within the
-configured grace period, cancel remaining tasks, then stop the process. Expired leases are
-reclaimed on startup. Never acknowledge a job before its transaction commits.
+The bot owns no lease pool and no worker loop, so there is nothing to drain beyond its own clients.
+Stopping is `systemctl --user restart maple-chat-bot.service` for the supervised bot, and signal or
+exit for the one-shot CLI commands. `run-bot` closes the Discord client and every HTTP client in
+its teardown path, so a stop releases sockets rather than leaving them open. Each crawl or indexing
+step commits per unit of work inside a transaction, so a process that dies mid-run leaves a
+committed prefix and a resumable checkpoint instead of a partially applied page.
+
+`ShutdownCoordinator` is still exported from `ops/shutdown.py`, but nothing in `cli.py` or
+`runtime.py` instantiates it since the lease worker was removed, so it is inert.
 
 ## Supervised services (systemd user units)
 

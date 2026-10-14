@@ -4,17 +4,11 @@ import os
 from datetime import UTC, datetime, timedelta
 
 import pytest
-import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from maple_chat.admin import AdminDenied, AdminService
 from maple_chat.db.models import (
     AnswerMode,
-    AuditEvent,
     Chunk,
-    CrawlJob,
-    DenylistEntry,
-    GuildSettings,
     SourceType,
 )
 from maple_chat.knowledge.catalog import load_job_catalog
@@ -558,69 +552,3 @@ async def test_canonical_repair_aggregates_all_hidden_model_calls(
     assert outcome.metrics.input_tokens_per_second == pytest.approx(100.0)
     assert outcome.metrics.output_tokens_per_second == pytest.approx(10.0)
     assert "입력 300 tok · 출력 30 tok · 총 330 tok" in outcome.text
-
-
-@pytest.mark.asyncio
-async def test_admin_is_owner_only_and_audited_without_raw_actor_id(
-    factory: async_sessionmaker[AsyncSession],
-) -> None:
-    admin = AdminService(owner_id=1234, pii_salt="x" * 32)
-    with pytest.raises(AdminDenied):
-        admin.require_owner(9999)
-    async with factory() as session, session.begin():
-        await admin.audit(
-            session,
-            actor_id=1234,
-            action="denylist.add",
-            target="article:2304:1",
-            result="succeeded",
-        )
-    async with factory() as session:
-        event = await session.scalar(sa.select(AuditEvent))
-        assert event is not None
-        assert event.action == "denylist.add"
-        assert event.actor_hash != "1234"
-
-
-@pytest.mark.asyncio
-async def test_operator_commands_require_impact_confirmation_and_report_status(
-    factory: async_sessionmaker[AsyncSession],
-) -> None:
-    admin = AdminService(owner_id=1234, pii_salt="x" * 32)
-    source_key = "article:2304:999"
-    async with factory() as session, session.begin():
-        with pytest.raises(ValueError, match="confirmation"):
-            await admin.request_reindex(
-                session,
-                actor_id=1234,
-                source_key=source_key,
-                confirmation="wrong",
-            )
-        job_id = await admin.request_reindex(
-            session,
-            actor_id=1234,
-            source_key=source_key,
-            confirmation=source_key,
-        )
-        await admin.deny_article(
-            session,
-            actor_id=1234,
-            board_id=2304,
-            remote_article_id=999,
-            reason="rights_request",
-            confirmation=source_key,
-        )
-        await admin.configure_channels(
-            session,
-            actor_id=1234,
-            guild_id=1,
-            channel_ids=(10, 11),
-        )
-        status = await admin.status(session, actor_id=1234)
-    assert status["queue_depth"] == 1
-    async with factory() as session:
-        assert await session.get(CrawlJob, job_id) is not None
-        assert await session.scalar(sa.select(sa.func.count()).select_from(DenylistEntry)) == 1
-        guild = await session.get(GuildSettings, 1)
-        assert guild is not None
-        assert guild.allowed_channel_ids == [10, 11]

@@ -171,6 +171,7 @@ def evaluate(
         passed,
     )
 
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="maple-evaluate")
     parser.add_argument("--cases", type=Path, required=True)

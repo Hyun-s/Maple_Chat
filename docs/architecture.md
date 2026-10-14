@@ -27,5 +27,7 @@ The implemented pipeline adds the canonical PostgreSQL schema, transactional out
 repositories, fixture-first sanitization, single-active embedding revisions, hybrid retrieval,
 immutable answer sources, and seven-board scheduling without changing these boundaries.
 Synchronization runs as one-shot commands started by the scheduler and the loop scripts. The
-lease-based `crawl_jobs` queue layer is still present in the tree, but no long-lived process
-consumes leases, so it is not a runtime dependency of the current pipeline.
+`crawl_jobs` queue primitives (enqueue, lease, acknowledge, fail, reclaim) are still in the tree,
+but no production path enqueues or leases a job any more, so the queue is not a runtime dependency
+of the current pipeline. The outbox is independent of it: `upsert_article_with_outbox` and
+`upsert_comment_with_outbox` write `outbox_events` in the same transaction as the source row.

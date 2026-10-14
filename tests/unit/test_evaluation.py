@@ -50,5 +50,3 @@ def test_fixture_evaluation_runner_p95_is_well_below_retrieval_budget() -> None:
         samples.append(time.perf_counter() - started)
     p95 = sorted(samples)[int(len(samples) * 0.95) - 1]
     assert p95 < 0.05
-
-

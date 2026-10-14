@@ -1,1 +1,1 @@
-"""Operational observability, reconciliation, shutdown, and recovery helpers."""
+"""Structured operational logging and graceful shutdown coordination."""

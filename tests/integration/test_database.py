@@ -32,14 +32,11 @@ from maple_chat.db.repositories import (
     upsert_article_with_outbox,
 )
 from maple_chat.jobs.queue import (
-    JobLease,
     enqueue_job,
     fail_job,
     lease_jobs,
     reclaim_expired_leases,
 )
-from maple_chat.jobs.worker import LeaseWorker
-from maple_chat.ops.reconcile import reconcile_startup
 from maple_chat.time import utc_now
 
 pytestmark = pytest.mark.skipif(
@@ -327,41 +324,6 @@ async def test_tombstone_and_denylist_exclusion_is_transactional(
 
 
 @pytest.mark.asyncio
-async def test_startup_reconciliation_reapplies_denylist_and_expired_leases(
-    factory: async_sessionmaker[AsyncSession],
-) -> None:
-    article = await seed_article(factory)
-    async with factory() as session, session.begin():
-        session.add(
-            DenylistEntry(
-                normalized_url=article.url,
-                source_key="article:2304:1",
-                reason="rights_request",
-                actor_hash="owner-hash",
-                active=True,
-            )
-        )
-        await enqueue_job(
-            session,
-            job_type="reconcile",
-            dedupe_key="expired",
-            payload={},
-        )
-    lease_at = utc_now() + timedelta(seconds=1)
-    leases = await lease_jobs(factory, worker_id="gone", now=lease_at, lease_seconds=1)
-    assert len(leases) == 1
-
-    async with factory() as session, session.begin():
-        result = await reconcile_startup(session, now=lease_at + timedelta(seconds=2))
-    assert result.exclusions == 1
-    assert result.reclaimed_jobs == 1
-    async with factory() as session:
-        persisted = await session.get(Article, article.id)
-        assert persisted is not None
-        assert persisted.status == SourceStatus.DENIED
-
-
-@pytest.mark.asyncio
 async def test_active_denylist_prevents_source_reinsertion(
     factory: async_sessionmaker[AsyncSession],
 ) -> None:
@@ -396,48 +358,3 @@ async def test_active_denylist_prevents_source_reinsertion(
         assert persisted is not None
         assert persisted.status == SourceStatus.DENIED
         assert persisted.sanitized_body == ""
-
-
-@pytest.mark.asyncio
-async def test_lease_worker_acknowledges_success_and_retries_handler_failures(
-    factory: async_sessionmaker[AsyncSession],
-) -> None:
-    handled: list[int] = []
-
-    async def success(lease: JobLease) -> None:
-        handled.append(lease.id)
-
-    async def failure(lease: JobLease) -> None:
-        raise RuntimeError("fixture failure")
-
-    async with factory() as session, session.begin():
-        success_id = await enqueue_job(
-            session,
-            job_type="success",
-            dedupe_key="worker-success",
-            payload={},
-        )
-        failure_id = await enqueue_job(
-            session,
-            job_type="failure",
-            dedupe_key="worker-failure",
-            payload={},
-        )
-    worker = LeaseWorker(
-        factory,
-        worker_id="test-worker",
-        handlers={"success": success, "failure": failure},
-    )
-    tick = await worker.tick(limit=2)
-    assert tick.leased == 2
-    assert tick.succeeded == 1
-    assert tick.failed == 1
-    assert handled == [success_id]
-    async with factory() as session:
-        success_job = await session.get(CrawlJob, success_id)
-        failed_job = await session.get(CrawlJob, failure_id)
-        assert success_job is not None
-        assert success_job.state == JobState.SUCCEEDED
-        assert failed_job is not None
-        assert failed_job.state == JobState.QUEUED
-        assert failed_job.last_error_code == "handler_failed:RuntimeError"

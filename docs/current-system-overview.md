@@ -217,13 +217,14 @@ Discord `--agent` 질문
 
 | 테이블 | 역할 |
 |---|---|
-| `crawl_runs` | 일일/백필 실행 단위와 counters/state |
-| `crawl_jobs` | lease, retry, dead-letter를 지원하는 PostgreSQL job queue |
+| `crawl_runs` | durable job run 단위의 counters/state 스키마 (현재 쓰는 코드 없음) |
+| `crawl_jobs` | lease, retry, dead-letter를 지원하는 PostgreSQL job queue (현재 쓰는 코드 없음) |
 | `outbox_events` | 글·댓글 변경 이벤트의 transactional outbox |
 
-큐는 `FOR UPDATE SKIP LOCKED` lease를 지원하고, 실패 시 exponential backoff 후 최대 시도 횟수를
-넘으면 dead letter로 전환한다. 다만 현재 로컬 실운영의 일일 수집은 이 durable queue worker가
-아니라 shell loop가 `sync-live` CLI를 직접 호출하는 경로다.
+`jobs/queue.py`는 `FOR UPDATE SKIP LOCKED` lease, exponential backoff retry, dead letter 전환을
+구현하고 있지만 enqueue를 포함해 어떤 src 경로에서도 호출되지 않는다. `crawl_runs`와 `crawl_jobs`
+실운영 row도 각각 0건이다. 현재 실운영의 수집·색인은 shell loop가 `sync-live`/`index` CLI를 직접
+호출하는 one-shot 경로이며, 글·댓글 변경 이벤트만 `outbox_events`에 same-transaction으로 남는다.
 
 ### 5.5 공식 지식 그래프 영역
 

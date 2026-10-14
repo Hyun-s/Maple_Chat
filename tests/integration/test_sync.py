@@ -8,25 +8,11 @@ import pytest
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from maple_chat.config import ProcessRole, Settings
 from maple_chat.crawler.fixture import FixtureCorpus, ingest_fixture_board
-from maple_chat.crawler.policy import LiveCrawlDenied
-from maple_chat.db.models import (
-    Article,
-    Board,
-    Category,
-    Comment,
-    CrawlJob,
-    OutboxEvent,
-    RunState,
-)
+from maple_chat.db.models import Article, Board, Category, Comment, OutboxEvent
 from maple_chat.scheduler.planner import (
     BOARD_NAMES,
-    BackfillMode,
-    finish_run,
-    plan_backfill_page,
-    plan_daily_incremental,
-    plan_recent_first,
+    plan_round_robin_backfill,
     record_board_progress,
     seed_boards,
 )
@@ -37,57 +23,11 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def fixture_settings() -> Settings:
-    return Settings(
-        role=ProcessRole.SCHEDULER,
-        database_url="postgresql+asyncpg://fixture@localhost/maple_chat",
-        live_crawl_enabled=False,
-    )
-
-
 @pytest.mark.asyncio
-async def test_seven_board_runs_suppress_overlap_and_preserve_partial_failure(
+async def test_backfill_checkpoint_resumes_without_crossing_the_target_page(
     factory: async_sessionmaker[AsyncSession],
 ) -> None:
     now = datetime(2026, 8, 4, tzinfo=UTC)
-    async with factory() as session, session.begin():
-        await seed_boards(session)
-        recent = await plan_recent_first(session, now=now)
-    assert recent.created is True
-    assert len(recent.jobs) == 7
-
-    async with factory() as session, session.begin():
-        duplicate = await plan_recent_first(session, now=now)
-        assert duplicate == type(duplicate)(recent.run_id, False, ())
-        assert (
-            await finish_run(
-                session,
-                run_id=recent.run_id,
-                succeeded=6,
-                failed=1,
-                finished_at=now,
-            )
-            == RunState.PARTIAL
-        )
-        daily = await plan_daily_incremental(session, now=now)
-    assert daily.created is True
-    assert len(daily.jobs) == 7
-
-    async with factory() as session, session.begin():
-        overlap = await plan_daily_incremental(session, now=now)
-    assert overlap.created is False
-    assert overlap.run_id == daily.run_id
-    async with factory() as session:
-        assert await session.scalar(sa.select(sa.func.count()).select_from(Board)) == 7
-        assert await session.scalar(sa.select(sa.func.count()).select_from(CrawlJob)) == 14
-
-
-@pytest.mark.asyncio
-async def test_backfill_checkpoint_resumes_and_live_mode_stays_rights_gated(
-    factory: async_sessionmaker[AsyncSession],
-) -> None:
-    now = datetime(2026, 8, 4, tzinfo=UTC)
-    settings = fixture_settings()
     async with factory() as session, session.begin():
         await seed_boards(session)
         await record_board_progress(
@@ -98,28 +38,24 @@ async def test_backfill_checkpoint_resumes_and_live_mode_stays_rights_gated(
             completed=False,
             succeeded_at=now,
         )
-    async with factory() as session, session.begin():
-        first_job = await plan_backfill_page(
-            session,
-            settings=settings,
-            board_id=2304,
-            mode=BackfillMode.FIXTURE,
-        )
-    async with factory() as session, session.begin():
-        resumed_job = await plan_backfill_page(
-            session,
-            settings=settings,
-            board_id=2304,
-            mode=BackfillMode.FIXTURE,
-        )
-        with pytest.raises(LiveCrawlDenied, match="LIVE_CRAWL_ENABLED=false"):
-            await plan_backfill_page(
-                session,
-                settings=settings,
-                board_id=2304,
-                mode=BackfillMode.LIVE,
+    async with factory() as session:
+        rows = (
+            await session.execute(
+                sa.select(Board.board_id, Board.crawl_checkpoint).where(
+                    Board.board_id.in_(sorted(BOARD_NAMES))
+                )
             )
-    assert first_job == resumed_job
+        ).all()
+    checkpoints = {
+        board_id: None
+        if checkpoint.get("backfill_complete") is True
+        else int(checkpoint.get("next_backfill_page", 1))
+        for board_id, checkpoint in rows
+    }
+    plan = plan_round_robin_backfill(checkpoints, target_page=200, page_batch=10)
+    resumed = [item for item in plan if item.board_id == 2304]
+    assert resumed[0].start_page == 3
+    assert all(item.start_page + item.max_pages - 1 <= 200 for item in plan)
     async with factory() as session:
         board = await session.get(Board, 2304)
         assert board is not None
