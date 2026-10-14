@@ -22,12 +22,18 @@ conda run -n maple-chat scripts/verify_all.sh
 `scripts/verify_all.sh` is the full gate: it runs the G001 compliance checks (secret scan,
 `pip check`, `pip-audit`, `pip-licenses`, Ruff, Ruff format, MyPy, unit tests, compose config),
 the fixed evaluation fixture, `verify_g002.sh`, and `verify_g007_restore.sh`. On this aarch64
-host `pip check` aborts it on the known `nvidia-cusparselt-cu13 0.8.1 is not supported on this
-platform` wheel-tag false positive. `scripts/setup_local.sh` already whitelists that one line;
-`verify_g001.sh` does not, so the whole script stops at step two. This is a platform condition,
-not a repository defect, and it reproduces on an unmodified checkout. To run the equivalent checks
-now, execute the individual G001 steps and `scripts/verify_g002.sh` (the behaviour and coverage
-gate, which passes locally).
+host the known `nvidia-cusparselt-cu13 0.8.1 is not supported on this platform` wheel-tag false
+positive no longer aborts it: `verify_g001.sh` now whitelists that single line the same way
+`scripts/setup_local.sh` does, and only when the machine is actually `aarch64`.
+
+The wrapper now stops one step later, at `pip-audit`, which reports four advisories in two
+transitive packages: `multidict 6.7.1` (CVE-2026-104874, fixed in 6.9.1, pulled in by
+`aiohttp`/`yarl`) and `urllib3 2.7.0` (PYSEC-2026-4175/4176/4177, fixed in 2.8.0, reachable only
+through the audit tooling `pip_audit`/`detect-secrets`/`CacheControl`, not through the bot). The
+environment pins neither package directly, so clearing this needs deliberate dependency bumps
+rather than an environment edit. Until they land, run the equivalent checks individually: each
+G001 step and `scripts/verify_g002.sh` (the behaviour and coverage gate) pass locally, and
+`verify_g007_restore.sh` is the restore drill.
 
 The Conda environment installs the OCR execution profile only. Embedding and reranking are not
 loaded in-process: they come from the remote TEI sidecars, so no local model artifact is read or

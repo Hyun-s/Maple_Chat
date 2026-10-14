@@ -58,3 +58,9 @@ Conda environment reports `nvidia-cusparselt-cu13 0.8.1` as unsupported on the c
 The secret scan, `pip-audit` (no known vulnerabilities), license inventory, Ruff, format, Mypy,
 evaluation, Compose smoke test, PostgreSQL tests, migrations, and restore drill pass independently.
 Do not report the combined wrapper itself as passing until the CUDA package metadata/lock is fixed.
+
+> Update 2026-10-14: that blocker is gone — `verify_g001.sh` now whitelists the same single
+> `nvidia-cusparselt-cu13 0.8.1` line that `setup_local.sh` already whitelists. The wrapper stops one
+> step later now, at `pip-audit`, which flags four advisories in the transitive `multidict 6.7.1`
+> and `urllib3 2.7.0` packages (detail in `docs/development.md`). The "no known vulnerabilities"
+> line above was true at the 2026-08-04 checkpoint and is no longer true on this host.
