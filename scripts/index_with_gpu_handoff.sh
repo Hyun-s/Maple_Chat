@@ -12,17 +12,12 @@ cd "$ROOT_DIR"
 
 batch_size="${INDEX_BATCH_SIZE:-32}"
 embedding_provider="${EMBEDDING_PROVIDER:-remote}"
-embedding_device="${INDEX_EMBEDDING_DEVICE:-cuda}"
 index_lock_file="${INDEX_LOCK_FILE:-/tmp/maple-chat-index.lock}"
 max_batches_per_source="${INDEX_MAX_BATCHES_PER_SOURCE:-8}"
 gpu_manager="${MAPLE_CHAT_LLM_MANAGER:-/home/hyuns/local-claude-code/docker-compose-manager.sh}"
 
 if ! [[ "$batch_size" =~ ^[0-9]+$ ]] || (( batch_size < 1 || batch_size > 256 )); then
   echo "INDEX_BATCH_SIZE must be an integer between 1 and 256" >&2
-  exit 2
-fi
-if [[ "$embedding_device" != "cuda" && "$embedding_device" != "cpu" ]]; then
-  echo "INDEX_EMBEDDING_DEVICE must be cuda or cpu" >&2
   exit 2
 fi
 if ! [[ "$max_batches_per_source" =~ ^[0-9]+$ ]]; then
@@ -56,7 +51,6 @@ fi
 
 echo "Indexing $pending pending sanitized sources with BGE-M3 via $embedding_provider provider"
 export EMBEDDING_PROVIDER="$embedding_provider"
-export EMBEDDING_DEVICE="$embedding_device"
 
 vllm_was_running="false"
 if docker ps --format '{{.Names}}' | grep -qx "vllm-local-coder"; then

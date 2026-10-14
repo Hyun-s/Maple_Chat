@@ -26,14 +26,11 @@ Environment overrides:
   RECOVERY_CRAWL_RETRY_DELAY=30   Base retry delay in seconds
   RECOVERY_INDEX_BATCH_SIZE=32    BGE-M3 embedding batch size
   EMBEDDING_PROVIDER=remote       TEI HTTP embedding provider (the only supported path)
-  RECOVERY_EMBEDDING_DEVICE=cuda  cuda (fast) or cpu (does not stop vLLM)
   RECOVERY_PATCH_DAYS=365         Official patch-note window
   RECOVERY_PATCH_MAX_PAGES=60     Maximum official listing pages
   RECOVERY_BACKUP=true            Back up before and after recovery
 
-The local CUDA path uses the model manager's gpu-job wrapper. It drains and stops
-the exact running vLLM container for indexing, then restores that container. The
-remote provider leaves the managed model stack running and fails closed if unavailable.
+The remote provider leaves the managed model stack running and fails closed if unavailable.
 EOF
 }
 
@@ -97,7 +94,6 @@ crawl_retries="${RECOVERY_CRAWL_RETRIES:-5}"
 crawl_retry_delay="${RECOVERY_CRAWL_RETRY_DELAY:-30}"
 index_batch_size="${RECOVERY_INDEX_BATCH_SIZE:-32}"
 embedding_provider="${EMBEDDING_PROVIDER:-remote}"
-embedding_device="${RECOVERY_EMBEDDING_DEVICE:-cuda}"
 patch_days="${RECOVERY_PATCH_DAYS:-365}"
 patch_max_pages="${RECOVERY_PATCH_MAX_PAGES:-60}"
 backup_enabled="${RECOVERY_BACKUP:-true}"
@@ -120,10 +116,6 @@ require_uint RECOVERY_CRAWL_RETRY_DELAY "$crawl_retry_delay" 3600
 require_uint RECOVERY_INDEX_BATCH_SIZE "$index_batch_size" 256
 require_uint RECOVERY_PATCH_DAYS "$patch_days" 3650
 require_uint RECOVERY_PATCH_MAX_PAGES "$patch_max_pages" 1000
-if [[ "$embedding_device" != "cuda" && "$embedding_device" != "cpu" ]]; then
-  echo "RECOVERY_EMBEDDING_DEVICE must be cuda or cpu" >&2
-  exit 2
-fi
 if [[ "$embedding_provider" != "remote" ]]; then
   echo "EMBEDDING_PROVIDER must be remote: the in-process BGE-M3 model was removed," >&2
   echo "so '$embedding_provider' aborts inside maple-chat index anyway." >&2
@@ -356,7 +348,6 @@ fi
 
 echo "All source collection completed; starting the single bulk BGE-M3 indexing pass"
 export EMBEDDING_PROVIDER="$embedding_provider"
-export EMBEDDING_DEVICE="$embedding_device"
 if [[ "$embedding_provider" == "remote" ]]; then
   conda_run maple-chat index --batch-size "$index_batch_size"
 fi

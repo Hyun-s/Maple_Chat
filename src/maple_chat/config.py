@@ -103,11 +103,6 @@ class Settings(BaseSettings):
         le=300,
         validation_alias="EMBEDDING_TIMEOUT_SECONDS",
     )
-    embedding_device: str = Field(
-        default="auto",
-        pattern=r"^(auto|cpu|cuda)$",
-        validation_alias="EMBEDDING_DEVICE",
-    )
     reranker_model: str = Field(
         default="BAAI/bge-reranker-v2-m3",
         validation_alias="RERANKER_MODEL",

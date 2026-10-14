@@ -152,10 +152,8 @@ tail -f logs/recovery/latest/knowledge.log
 The Knowledge Graph, Nexon collector, and Inven collector run concurrently. Community board
 requests are deliberately serialized through one respectful client and shared lock: starting seven
 separate crawlers would bypass the per-client one-request-per-second pacing policy. Expensive model
-loading is deferred until all collection finishes, so BGE-M3 is loaded only once. On the CUDA path,
-the external `gpu-job` wrapper drains and temporarily stops the exact active vLLM container, runs
-the embedding build exclusively, and restores vLLM afterward. Set
-`RECOVERY_EMBEDDING_DEVICE=cpu` only when a much slower CPU-only embedding rebuild is preferred.
+loading is deferred until all collection finishes, so each embedding batch is sent only once to the
+always-on remote TEI service, which leaves the managed model stack running for the whole recovery.
 
 When DCM's pinned BGE-M3 TEI service is already running, set `EMBEDDING_PROVIDER=remote`. Host-run
 commands use `EMBEDDING_BASE_URL=http://127.0.0.1:8081/v1`; Compose app services join the external

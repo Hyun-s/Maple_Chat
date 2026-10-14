@@ -33,7 +33,6 @@ def test_required_settings_load_without_exposing_secrets() -> None:
     assert settings.live_crawl_enabled is False
     assert settings.llm_base_url == "http://127.0.0.1:8001/v1"
     assert settings.llm_model == "local-coder"
-    assert settings.embedding_device == "auto"
     assert settings.embedding_provider == "remote"
     assert settings.embedding_base_url == "http://127.0.0.1:8081/v1"
     assert settings.embedding_remote_model == "bge-m3"
@@ -206,14 +205,6 @@ def test_crawler_contact_is_optional() -> None:
         settings = load_settings(ProcessRole.CRAWLER_WORKER)
 
     assert settings.crawler_contact is None
-
-
-def test_embedding_device_accepts_cuda_and_rejects_unknown_values() -> None:
-    with patch.dict(os.environ, VALID_ENV | {"EMBEDDING_DEVICE": "cuda"}, clear=True):
-        assert load_settings().embedding_device == "cuda"
-
-    with pytest.raises(ValidationError):
-        Settings(**(VALID_ENV | {"EMBEDDING_DEVICE": "tpu"}))
 
 
 def test_bot_role_requires_remote_reranker() -> None:

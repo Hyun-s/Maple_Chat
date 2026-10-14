@@ -598,7 +598,6 @@ def test_embedding_provider_selection_is_explicit(monkeypatch: pytest.MonkeyPatc
         embedding_base_url="http://127.0.0.1:8081/v1",
         embedding_remote_model="bge-m3",
         embedding_timeout_seconds=10.0,
-        embedding_device="cpu",
     )
 
     assert runtime.build_embedding_provider(settings) is remote_provider
@@ -629,7 +628,6 @@ def test_remote_provider_construction_failure_never_falls_back(
         embedding_base_url="http://127.0.0.1:8081/v1",
         embedding_remote_model="bge-m3",
         embedding_timeout_seconds=10.0,
-        embedding_device="cpu",
     )
 
     with pytest.raises(RuntimeError, match="remote unavailable"):
