@@ -25,13 +25,13 @@ Tool-using Agent를 제공하는 private Discord AI 시스템이다.
 | 개인정보 정제 | 구현 | 저장·임베딩 전에 적용 |
 | PostgreSQL 원문 저장 | 구현·운영 중 | 글, 댓글, 상태, 추천 수, 조회 수 등 |
 | 구조 기반 청크 생성 | 구현 | `structure-v1`, 550/700/80 토큰 정책 |
-| BGE-M3 임베딩 | 구현·운영 중 | CUDA, 1024차원 |
-| pgvector dense 검색 | 구현·운영 중 | cosine + HNSW |
-| pg_trgm lexical 검색 | 구현·운영 중 | GIN trigram 인덱스 |
+| BGE-M3 임베딩 | 구현·운영 중 | 원격 TEI 전용(`EMBEDDING_PROVIDER=remote`), 1024차원 |
+| pgvector dense 검색 | 구현·운영 중 | cosine + HNSW, 질의별로 `hnsw.ef_search = 400` 고정 |
+| two-stage lexical 검색 | 구현·운영 중 | `simple` tsvector GIN 사전 필터 + `pg_trgm` similarity, 병렬 스캔 fallback |
 | RRF 결합 | 구현 | dense/lexical 순위 결합 + 제한된 품질 boost |
 | BGE reranker | 구현·운영 중 | `BAAI/bge-reranker-v2-m3` |
 | 근거 기반 로컬 생성 | 구현·E2E 검증 | 2026-09-02 local Qwen SSE와 Discord 생성 답변 확인 |
-| 답변 처리 지표 | 구현 | 입력/출력/총 토큰, 입력·출력 TPS, 전체 처리 시간 표시·JSON 로그 |
+| 답변 처리 지표 | 구현 | 토큰·TPS·전체 시간 + 구간별 timer(embedding, vector/lexical query, merge, graph, rerank, persistence, model) |
 | `--no-rag` | 구현 | 검색을 완전히 건너뛰는 direct 모드 |
 | RAG-Anything식 query mode | 구현 | `local/global/hybrid/naive/mix/bypass`, 기본 `mix` |
 | 답변별 출처 보존 | 구현 | `answers`와 `answer_sources` |
@@ -54,9 +54,10 @@ Tool-using Agent를 제공하는 private Discord AI 시스템이다.
 
 ### 2.1 현재 연구 corpus snapshot
 
-2026-09-01 로컬 PostgreSQL 기준 게시글 19,192건, 댓글 76,803건, 활성 chunk/embedding
-98,801건이며 활성 embedding revision은 `bge-m3-5617a9f61b02` 1024차원이다. 이 수치는 운영
-데이터 규모이며 고정 evaluation fixture의 성능과는 별개다.
+2026-10-14 로컬 PostgreSQL 기준 게시글 63,966건, 댓글 314,603건, 활성 chunk 387,657건이고
+동일 건수의 활성 embedding이 붙어 있다. 활성 embedding revision은 `bge-m3-5617a9f61b02`
+1024차원 cosine이며 하나가 유일하다. 이 수치는 운영 데이터 규모이며 고정 evaluation
+fixture의 성능과는 별개다.
 
 ## 3. 전체 데이터 흐름
 
@@ -183,7 +184,7 @@ Discord `--agent` 질문
 - PostgreSQL 16.10
 - pgvector 0.8.0
 - pg_trgm 1.6
-- 현재 Alembic revision: `g010_agent_runs`
+- 현재 Alembic revision: `g011_chunk_tsv_lexical`
 - 로컬 개발 배치는 `127.0.0.1:55432`에만 bind한다.
 
 ### 5.2 수집 원본 영역
@@ -293,7 +294,8 @@ source_key + ordinal + chunking_revision + chunk_text
 - 차원: 1024
 - normalize: true
 - 거리: cosine
-- 장치: CUDA
+- 제공: 원격 TEI 사이드카. `EMBEDDING_PROVIDER=remote`가 모든 역할의 필수값이고, 프로세스가
+  모델을 직접 로드하던 CUDA/CPU 경로는 제거됐다(`bde99a6`).
 - 현재 활성 revision: `bge-m3-5617a9f61b02`
 
 모델 이름뿐 아니라 immutable commit이 DB revision과 맞지 않으면 색인을 거부한다.
@@ -303,14 +305,23 @@ source_key + ordinal + chunking_revision + chunk_text
 ### 7.1 Dense 검색
 
 1. 질문을 BGE-M3 1024차원 vector로 변환한다.
-2. pgvector cosine distance로 가까운 활성 청크 50개를 조회한다.
-3. active embedding revision만 검색한다.
+2. `SET LOCAL hnsw.ef_search = 400`으로 HNSW 탐색 깊이를 고정하고, active embedding
+   revision에 묶인 활성 청크에서 cosine 기준으로 `candidate_limit × 20`(기본 1,000)개를 읽는다.
+3. server default `ef_search = 40`에서는 iterative top-up으로 넘어가 dense 질의가
+   measured 1.027초까지 느려진다. `ef_search = 400`은 같은 질의가 단일 패스로 돌아
+   0.156초가 되고, 1000으로 올리면 0.169초로 다시 느려지므로 400이 고정 심도다. 수치는 active
+   chunk 67,313개 시점에 측정한 것이고, 지금 활성 chunk는 §2.1 기준으로 훨씬 크므로 절대값보다
+   단일 패스냐 top-up이냐는 동작 차이가 남아 있는 근거다.
 
 ### 7.2 Lexical 검색
 
-1. `pg_trgm`의 `similarity(chunk.text, query)`를 사용한다.
-2. similarity가 0보다 큰 활성 청크 상위 50개를 조회한다.
-3. `ix_chunks_text_trgm` GIN 인덱스를 사용한다.
+1. 질문에서 alphanumeric·한글 token만 골라 prefix 매칭 tsquery(`'token':* | ...`)를 만든다.
+2. `ix_chunks_text_tsv` GIN 인덱스로 `simple` tsvector 사전 필터를 걸어 후보 600개를 먼저 줄인다.
+3. 그 후보에 `pg_trgm`의 `similarity(chunk.text, query)`를 계산해 0보다 큰 것만
+   `candidate_limit × 4`(기본 200)개까지 similarity 순으로 남긴다.
+4. tsquery가 만들 수 없거나 사전 필터가 0건이면, `min_parallel_table_scan_size = 1MB`와
+   `max_parallel_workers_per_gather = 4`를 설정하고 `ix_chunks_text_trgm` 경로를 쓰는
+   병렬 full scan으로 fallback한다.
 
 ### 7.3 RRF 결합
 
@@ -393,6 +404,20 @@ community evidence에 검색 근거 본문의 entity linking을 더한다. `bypa
 | community와 graph 근거 모두 부족 | `insufficient_evidence` | 질문을 구체화하라는 거절 |
 | 근거는 있으나 LLM 실패 | `retrieval_only` | 검색 결과 또는 정확 graph relation 목록 |
 
+### 8.4 답변 구간 지표
+
+`AnswerProcessingMetrics`는 전체 `total_seconds`와 생성 `model_seconds`뿐 아니라 구간별 timer를
+남긴다. `embedding_seconds`, `vector_query_seconds`, `lexical_query_seconds`, `merge_seconds`,
+`graph_seconds`, `rerank_seconds`, `persistence_seconds`가 그것이다. `retrieval_seconds`는
+`retriever.retrieve()` 호출 전체의 wall clock, 즉 임베딩 조회·dense/lexical 질의·병합·재정렬까지
+잇는 검색 구간이고, 그 안에서 dense와 lexical 질의는 `asyncio.gather`로 서로 병렬로 실행된다.
+지식 그래프 조회(`graph_seconds`)는 검색 구간 뒤에 별도 시계로 따로 잰다.
+`total_seconds`가 `model_seconds`보다 크게 벌어지면 원인 후보를 구간 숫자로 특정할 수 있다.
+
+같은 값은 두 곳에 그대로 노출된다. 답변 하단의 `processing_metrics_footer`가 처리 지표와
+`검색 단계: 임베딩 … · 증거 검색 합계(임베딩+DB+재정렬) … · 재정렬 …` 구간 문자열을 붙이고,
+개인정보가 빠진 `discord_answer_completed` JSON 로그에도 항목별로 기록된다.
+
 ## 9. Discord 계층
 
 - 단일 private guild와 허용 채널만 처리한다.
@@ -409,49 +434,49 @@ community evidence에 검색 근거 본문의 entity linking을 더한다. `bypa
 
 ## 10. 현재 실제 데이터 스냅샷
 
-2026-08-25 확인값:
+2026-10-14 확인값:
 
 | 항목 | 수량 |
 |---|---:|
 | 게시판/공식 source board | 8 (Inven 7 + Nexon 공식 1) |
-| 저장된 게시글 | 17,777 (공식 패치노트 30 포함) |
-| indexed 게시글 | 17,776 |
-| 미색인 게시글 | 1 |
-| 저장된 댓글 | 70,386 |
-| indexed 댓글 | 70,373 |
-| 미색인 댓글 | 13 |
-| 전체 청크 | 90,850 |
-| 활성 청크 | 90,848 |
-| 활성 embedding | 90,848 |
+| 저장된 게시글 | 63,966 (공식 패치노트 32 포함) |
+| indexed 게시글 | 63,963 |
+| 미색인 게시글 | 3 |
+| 저장된 댓글 | 314,603 |
+| indexed 댓글 | 314,261 |
+| 미색인 댓글 | 342 |
+| 전체 청크 | 388,009 |
+| 활성 청크 | 387,657 |
+| 활성 embedding | 387,657 |
 | 이미지/OCR asset | 0 |
-| 누적 답변 | 38 |
+| 누적 답변 | 48 |
 
 답변 모드 분포:
 
-- generated: 27
-- retrieval_only: 7
-- direct: 3
-- insufficient_evidence: 1
+- generated: 47
+- direct: 1
 
 중요: **DB에 저장된 모든 글과 댓글이 검색 가능한 것은 아니다.** 검색 가능한 범위는 active chunk와
-active embedding이 생성된 indexed 데이터다. 현재 미색인 상태는 게시글 1건과 댓글 13건이다.
-공식 패치노트 초기 백필은 30건·555개 벡터로 완료됐다.
+active embedding이 생성된 indexed 데이터다. 현재 미색인 상태는 게시글 3건과 댓글 342건이며, 이는
+직전 수집 slice가 아직 색인 단계에 남아 있다는 뜻이다.
 
 ### 게시판 checkpoint
 
-| 게시판 | last successful page | next page |
+| 게시판 | last successful page | next backfill page |
 |---|---:|---:|
-| 전사 | 211 | 212 |
-| 마법사 | 40 | 41 |
-| 궁수 | 40 | 41 |
-| 도적 | 40 | 41 |
-| 해적 | 40 | 41 |
-| 질문과 답변 | 40 | 41 |
-| 팁과 노하우 | 35 | 36 |
+| 전사 | 200 | 201 |
+| 마법사 | 200 | 201 |
+| 궁수 | 228 | 229 |
+| 도적 | 215 | 216 |
+| 해적 | 200 | 201 |
+| 질문과 답변 | 203 | 204 |
+| 팁과 노하우 | 216 | 217 |
 
-현재 백필 script의 기본 목표는 200페이지다. 전사 checkpoint는 과거 실행으로 이미 211까지
-진행됐으므로 추가 수집 대상에서 제외되고, 나머지 게시판은 각 checkpoint부터 200페이지까지
-10페이지 round-robin으로 진행한다.
+현재 백필 script의 기본 목표는 `FULL_BACKFILL_TARGET_PAGE=200`, slice는
+`FULL_BACKFILL_PAGE_BATCH=10`이다. 세 게시판은 목표선에 정확히 닿아 있고 나머지는 이미 더 깊이
+진했다. 목표선을 지나도 `backfill_complete`가 아직 `false`인 게시판은 스케줄 대상에 그대로 남으므로
+각자 저장된 `next_backfill_page`부터 10페이지 round-robin으로 이어간다. 최신 페이지 갱신은 일일
+refresh가 같은 checkpoint JSON 안의 별도 `last_refresh_at` 키로 추적한다.
 
 ## 11. 지식 그래프의 현재 상태
 

@@ -25,5 +25,7 @@ Kafka, Redis, Elasticsearch, Milvus, and cloud LLM services are outside the appr
 
 The implemented pipeline adds the canonical PostgreSQL schema, transactional outbox, idempotent
 repositories, fixture-first sanitization, single-active embedding revisions, hybrid retrieval,
-immutable answer sources, seven-board scheduling, and lease-based durable jobs without changing
-these boundaries.
+immutable answer sources, and seven-board scheduling without changing these boundaries.
+Synchronization runs as one-shot commands started by the scheduler and the loop scripts. The
+lease-based `crawl_jobs` queue layer is still present in the tree, but no long-lived process
+consumes leases, so it is not a runtime dependency of the current pipeline.
