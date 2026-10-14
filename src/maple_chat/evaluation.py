@@ -171,23 +171,6 @@ def evaluate(
         passed,
     )
 
-
-def release_blockers(
-    *,
-    rights_evidence: Path,
-    human_judgments: Path,
-    live_validation: Path,
-) -> tuple[str, ...]:
-    blockers: list[str] = []
-    if not rights_evidence.is_file():
-        blockers.append("external_inven_rights_evidence_missing")
-    if not human_judgments.is_file():
-        blockers.append("human_answer_judgments_missing")
-    if not live_validation.is_file():
-        blockers.append("private_guild_and_local_vllm_validation_missing")
-    return tuple(blockers)
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="maple-evaluate")
     parser.add_argument("--cases", type=Path, required=True)

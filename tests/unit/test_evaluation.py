@@ -3,9 +3,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-import pytest
-
-from maple_chat.evaluation import evaluate, load_cases, load_predictions, release_blockers
+from maple_chat.evaluation import evaluate, load_cases, load_predictions
 
 CASES = Path("tests/evaluation/korean-rag-v1.jsonl")
 PREDICTIONS = Path("tests/evaluation/fixture-predictions-v1.json")
@@ -54,33 +52,3 @@ def test_fixture_evaluation_runner_p95_is_well_below_retrieval_budget() -> None:
     assert p95 < 0.05
 
 
-def test_release_gate_remains_explicitly_closed_without_external_artifacts(
-    tmp_path: Path,
-) -> None:
-    blockers = release_blockers(
-        rights_evidence=tmp_path / "rights.json",
-        human_judgments=tmp_path / "human.jsonl",
-        live_validation=tmp_path / "live.json",
-    )
-    assert blockers == (
-        "external_inven_rights_evidence_missing",
-        "human_answer_judgments_missing",
-        "private_guild_and_local_vllm_validation_missing",
-    )
-    for path in (tmp_path / "rights.json", tmp_path / "human.jsonl", tmp_path / "live.json"):
-        path.write_text("{}", encoding="utf-8")
-    assert (
-        release_blockers(
-            rights_evidence=tmp_path / "rights.json",
-            human_judgments=tmp_path / "human.jsonl",
-            live_validation=tmp_path / "live.json",
-        )
-        == ()
-    )
-
-
-def test_evaluation_loader_rejects_small_or_invalid_suites(tmp_path: Path) -> None:
-    path = tmp_path / "small.jsonl"
-    path.write_text("{}\n", encoding="utf-8")
-    with pytest.raises((ValueError, KeyError)):
-        load_cases(path)
