@@ -29,12 +29,19 @@ not a repository defect, and it reproduces on an unmodified checkout. To run the
 now, execute the individual G001 steps and `scripts/verify_g002.sh` (the behaviour and coverage
 gate, which passes locally).
 
-The Conda environment installs the OCR execution profile and the pinned CUDA PyTorch that the
-setup script verifies. Embedding and reranking are not loaded in-process: they come from the
-remote TEI sidecars, so no local model artifact is read or cached by Maple Chat code. OCR is
-fail-closed and executes through the host's local Tesseract binary. `scripts/setup_local.sh`
-checks that CUDA is available to the pinned Torch build and that Tesseract is on `PATH`, without
-modifying `base`.
+The Conda environment installs the OCR execution profile only. Embedding and reranking are not
+loaded in-process: they come from the remote TEI sidecars, so no local model artifact is read or
+cached by Maple Chat code, and no local model runtime is installed with it. OCR is fail-closed and
+executes through the host's local Tesseract binary. `scripts/setup_local.sh` installs from
+`environment.yml`, then checks that the OCR adapter (Pillow plus `pytesseract`) imports and that
+`tesseract` is on `PATH`, without modifying `base`.
+
+There is deliberately no Torch or CUDA wheel in the environment. It used to carry a pinned CUDA
+PyTorch that only `setup_local.sh` itself imported, so nothing in `src`, `scripts`, or `tests`
+needed it; the check was removed together with the pin. Importing every application module and
+running the unit suite with `torch` blocked at the import hook proves the independence, and
+`sentence-transformers`, which had been pulling Torch in through the retired `ml` extra, is not a
+dependency of anything that remains.
 
 `requirements/lock.txt` pins the verified G001 development dependency set. Update it only after
 installing the intended dependency changes in `maple-chat`, rerunning the security gates, and

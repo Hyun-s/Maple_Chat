@@ -6,6 +6,5 @@ dependencies:
   - pip=26.2
   - tesseract=5.5.3
   - pip:
-      - torch==2.13.0
       - -r requirements/lock.txt
       - -e .[ocr]

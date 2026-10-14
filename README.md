@@ -184,18 +184,19 @@ scripts/summarize_patch_reactions.sh 2026-09-10
 ## Conda와 검증
 
 호스트 `/home/hyuns/anaconda3`의 전용 `maple-chat` 환경만 사용하며 `base`는 변경하지
-않습니다. 환경에는 Tesseract `kor+eng`와 OCR adapter, 그리고 pinned된 CUDA PyTorch가
-들어가 있습니다. 다만 BGE-M3 임베딩과 reranker는 DCM이 기동하는 원격 TEI 사이드카가
-공급하므로, 이 환경이 두 모델을 프로세스 안으로 직접 로드하지는 않습니다.
+않습니다. 환경에는 Tesseract `kor+eng`와 OCR adapter만 들어갑니다. BGE-M3 임베딩과 reranker는
+DCM이 기동하는 원격 TEI 사이드카가 공급하므로, 이 환경이 두 모델을 프로세스 안으로 직접
+로드하지는 않으며 Torch나 CUDA wheel도 포함하지 않습니다.
 
 ```bash
 conda run -n maple-chat scripts/verify_all.sh
 ```
 
-다만 이 호스트(aarch64)에서는 `verify_all.sh`가 2단계 `pip check`에서 알려진
-`nvidia-cusparselt-cu13` wheel-tag 오탐으로 멈춥니다. 저장소 결함이 아니라 플랫폼 조건이고
-변경 없는 체크아웃에서도 동일하게 재현됩니다. 상세한 대체 실행 절차는 development 문서의
-Environment ownership 절에 있습니다.
+다만 지금 동작하는 실환경에는 아직 이전 `ml` extra가 남긴 Torch와 `nvidia-cusparselt-cu13`
+transitive wheel이 남아 있어서, 이 호스트(aarch64)의 `verify_all.sh`는 2단계 `pip check`에서
+알려진 wheel-tag 오탐으로 멈춥니다. 저장소 결함이 아니라 플랫폼 조건이고 변경 없는 체크아웃에서도
+동일하게 재현됩니다. `scripts/setup_local.sh`를 한 번 돌려 prune하면 함께 사라지고, 그 전까지는
+development 문서의 Environment ownership 절에 있는 대체 실행 절차를 사용합니다.
 
 ## 구현 구성
 

@@ -34,11 +34,11 @@ else
 fi
 
 "$ENV_PYTHON" - <<'PY'
+import importlib
 import shutil
 
-import torch
-
-assert torch.cuda.is_available(), "CUDA Torch is required for BGE embeddings"
+importlib.import_module("PIL.Image")
+importlib.import_module("pytesseract")
 assert shutil.which("tesseract"), "Tesseract is missing from the Conda environment"
-print(f"Conda runtime ready: CUDA Torch on {torch.cuda.get_device_name(0)} and Tesseract detected")
+print("Conda runtime ready: OCR adapter and host Tesseract binary detected")
 PY

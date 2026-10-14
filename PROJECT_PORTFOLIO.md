@@ -588,10 +588,12 @@ checkpoint를 검증했다. Discord Gateway에 연결한 뒤 허용 채널의 �
 측정은 [`docs/e2e-verification-2026-09-02.md`](docs/e2e-verification-2026-09-02.md)에 기록했다.
 NEXON API key가 없어 실제 character API tool만 E2E 범위에서 제외했다.
 
-통합 `verify_all.sh`의 개별 gate는 위와 같이 검증했으나, 전체 wrapper는 aarch64 Conda 환경의
-PyTorch 의존 패키지 `nvidia-cusparselt-cu13 0.8.1`을 `pip check`가 “현재 플랫폼에서 지원되지
-않음”으로 판정해 exit 1을 반환한다. `pip-audit`은 알려진 취약점이 없다고 보고했고 ML/Agent
-코드·테스트 실패는 아니지만, 환경 lock을 정리하기 전까지 full wrapper 통과로 표기하지 않는다.
+통합 `verify_all.sh`의 개별 gate는 위와 같이 검증했으나, 전체 wrapper는 aarch64 Conda 환경에 남은
+PyTorch 의존 패키지 `nvidia-cusparselt-cu13 0.8.1`을 `pip check`가 “현재 플랫폼에서 지원되지 않음”으로
+판정해 exit 1을 반환한다. `pip-audit`은 알려진 취약점이 없다고 보고했고 코드·테스트 실패는 아니지만,
+full wrapper 통과로는 표기하지 않는다. 원인인 Torch pin은 이미 `environment.yml`에서 제거했고
+(app 어디에서도 import하지 않는 것이 확인됐다), 실환경에서 prune되는 것은 `scripts/setup_local.sh`
+재실행 시점이다.
 
 ---
 
