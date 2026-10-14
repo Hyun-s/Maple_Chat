@@ -8,4 +8,4 @@ dependencies:
   - pip:
       - torch==2.13.0
       - -r requirements/lock.txt
-      - -e .[ml,ocr]
+      - -e .[ocr]
