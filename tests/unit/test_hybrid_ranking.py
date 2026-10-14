@@ -16,7 +16,6 @@ from maple_chat.retrieval.evidence import (
 from maple_chat.retrieval.hybrid import (
     Candidate,
     calibrated_rerank_score,
-    classify_query_hints,
     hybrid_retrieve,
     reciprocal_rank_fusion,
     title_query_coverage,
@@ -130,15 +129,6 @@ def test_authored_article_title_can_recover_a_cross_encoder_false_negative() -> 
     assert calibrated_rerank_score(
         "제논의 하드메이린 최소컷", sibling_comment, 0.01
     ) == pytest.approx(0.01)
-
-
-def test_query_hints_separate_test_and_live_server_language() -> None:
-    assert classify_query_hints("테섭 최신 변경점") == {
-        "test_server": True,
-        "live_server": False,
-        "as_of_requested": True,
-    }
-    assert classify_query_hints("본섭 기준 알려줘")["live_server"] is True
 
 
 def test_comment_branches_share_a_thread_group_but_not_the_parent_article() -> None:

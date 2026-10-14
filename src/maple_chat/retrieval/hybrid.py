@@ -489,12 +489,3 @@ async def hybrid_retrieve(
         lexical_query_seconds=lexical_query_seconds,
         merge_seconds=merge_seconds,
     )
-
-
-def classify_query_hints(query: str) -> dict[str, Any]:
-    lowered = query.casefold()
-    return {
-        "test_server": any(token in lowered for token in ("테섭", "테스트 서버", "test server")),
-        "live_server": any(token in lowered for token in ("본섭", "본 서버", "live server")),
-        "as_of_requested": any(token in lowered for token in ("현재", "최신", "기준", "언제")),
-    }
