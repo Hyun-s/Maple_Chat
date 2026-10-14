@@ -17,10 +17,11 @@ from maple_chat.db.models import (
     GuildSettings,
     SourceType,
 )
+from maple_chat.knowledge.catalog import load_job_catalog
 from maple_chat.knowledge.service import (
     DatabaseKnowledgeRetriever,
-    sync_builtin_job_catalog,
     sync_builtin_knowledge,
+    sync_knowledge_catalog,
 )
 from maple_chat.llm.client import (
     ChatMessage,
@@ -295,7 +296,7 @@ async def test_graph_only_evidence_generates_and_persists_official_provenance(
 ) -> None:
     now = datetime(2026, 8, 25, tzinfo=UTC)
     async with factory() as session, session.begin():
-        await sync_builtin_job_catalog(session, synced_at=now)
+        await sync_knowledge_catalog(session, load_job_catalog(), synced_at=now)
     graph = DatabaseKnowledgeRetriever(factory)
     generator = FixedGenerator()
     service = QAService(

@@ -19,7 +19,6 @@ from maple_chat.db.models import (
 from maple_chat.knowledge.catalog import (
     KnowledgeCatalog,
     load_builtin_catalogs,
-    load_job_catalog,
     normalize_alias,
 )
 
@@ -348,12 +347,6 @@ async def sync_knowledge_catalog(
         .values(active=False, updated_at=synced_at)
     )
     return KnowledgeSyncResult(1, len(catalog.entities), alias_count, len(catalog.relations))
-
-
-async def sync_builtin_job_catalog(
-    session: AsyncSession, *, synced_at: datetime
-) -> KnowledgeSyncResult:
-    return await sync_knowledge_catalog(session, load_job_catalog(), synced_at=synced_at)
 
 
 async def sync_builtin_knowledge(

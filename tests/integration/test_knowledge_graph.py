@@ -8,10 +8,11 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from maple_chat.db.models import KnowledgeEntity, KnowledgeRelation
+from maple_chat.knowledge.catalog import load_job_catalog
 from maple_chat.knowledge.service import (
     DatabaseKnowledgeRetriever,
-    sync_builtin_job_catalog,
     sync_builtin_knowledge,
+    sync_knowledge_catalog,
 )
 
 pytestmark = pytest.mark.skipif(
@@ -26,9 +27,9 @@ async def test_catalog_sync_is_idempotent_and_graph_queries_are_exact(
 ) -> None:
     now = datetime(2026, 8, 25, tzinfo=UTC)
     async with factory() as session, session.begin():
-        first = await sync_builtin_job_catalog(session, synced_at=now)
+        first = await sync_knowledge_catalog(session, load_job_catalog(), synced_at=now)
     async with factory() as session, session.begin():
-        second = await sync_builtin_job_catalog(session, synced_at=now)
+        second = await sync_knowledge_catalog(session, load_job_catalog(), synced_at=now)
 
     assert first == second
     assert first.entities == 54
