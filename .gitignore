@@ -34,3 +34,6 @@ Maple_chat_site/
 
 # Git mergetool leftovers
 *.orig
+
+# Generated patch-reaction reports (local artifact; regenerate with summarize_patch_reactions.sh)
+reports/
