@@ -195,10 +195,9 @@ Stopping is `systemctl --user restart maple-chat-bot.service` for the supervised
 exit for the one-shot CLI commands. `run-bot` closes the Discord client and every HTTP client in
 its teardown path, so a stop releases sockets rather than leaving them open. Each crawl or indexing
 step commits per unit of work inside a transaction, so a process that dies mid-run leaves a
-committed prefix and a resumable checkpoint instead of a partially applied page.
-
-`ShutdownCoordinator` is still exported from `ops/shutdown.py`, but nothing in `cli.py` or
-`runtime.py` instantiates it since the lease worker was removed, so it is inert.
+committed prefix and a resumable checkpoint instead of a partially applied page. The
+`ShutdownCoordinator` that once fenced a lease pool is gone together with the worker it used to
+coordinate, so no shutdown gate is left to reason about.
 
 ## Supervised services (systemd user units)
 

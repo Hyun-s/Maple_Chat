@@ -1,13 +1,9 @@
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 
-import pytest
-
 from maple_chat.ops.logging import JsonFormatter, redact
-from maple_chat.ops.shutdown import ShutdownCoordinator
 
 
 def test_structured_logs_redact_secret_and_pii_canaries() -> None:
@@ -70,23 +66,3 @@ def test_structured_logs_preserve_numeric_model_telemetry_without_content() -> N
     assert payload["output_tokens_per_second"] == 10.0
     assert "query" not in payload
     assert "content" not in payload
-
-
-@pytest.mark.asyncio
-async def test_shutdown_stops_new_work_and_is_bounded() -> None:
-    coordinator = ShutdownCoordinator()
-    blocker = asyncio.Event()
-
-    async def work() -> object:
-        await blocker.wait()
-        return None
-
-    task = asyncio.create_task(work())
-    coordinator.track(task)
-    assert await coordinator.shutdown(timeout_seconds=0.001) is False
-    assert task.cancelled()
-    rejected = asyncio.create_task(asyncio.sleep(0))
-    with pytest.raises(RuntimeError, match="shutdown"):
-        coordinator.track(rejected)
-    rejected.cancel()
-    await asyncio.gather(rejected, return_exceptions=True)

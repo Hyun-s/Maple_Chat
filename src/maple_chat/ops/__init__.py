@@ -1,1 +1,1 @@
-"""Structured operational logging and graceful shutdown coordination."""
+"""Structured operational logging."""
