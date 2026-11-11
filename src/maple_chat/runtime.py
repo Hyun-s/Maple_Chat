@@ -17,6 +17,9 @@ from maple_chat.agent.service import (
     NexonAgentService,
 )
 from maple_chat.agent.tools import build_nexon_tool_registry
+from maple_chat.session.manager import SessionManager
+from maple_chat.skills.exp import build_exp_skills_registry
+from maple_chat.skills.job_guide import build_job_guide_skills_registry
 from maple_chat.config import Settings
 from maple_chat.db.models import Answer, GuildSettings
 from maple_chat.db.session import create_engine, create_session_factory
@@ -169,10 +172,12 @@ class DatabaseAnswerHandler:
         factory: async_sessionmaker[AsyncSession],
         service: QAService,
         agent_service: DurableAgentService | AgentNotConfiguredService,
+        session_manager: SessionManager | None = None,
     ) -> None:
         self.factory = factory
         self.service = service
         self.agent_service = agent_service
+        self.session_manager = session_manager
 
     async def handle(
         self,
@@ -196,11 +201,25 @@ class DatabaseAnswerHandler:
             rag_enabled=rag_enabled,
             rag_mode=rag_mode,
         )
+        session_id = f"discord:{message.channel_id}:{message.author_id}"
+        context_prompt = ""
+        if self.session_manager is not None:
+            context_prompt = await self.session_manager.build_context_prompt(session_id)
+
         if agent_enabled:
-            outcome = await self.agent_service.answer(request, resume_run_id=agent_resume_id)
+            outcome = await self.agent_service.answer(
+                request, resume_run_id=agent_resume_id, context_prompt=context_prompt
+            )
         else:
             async with self.factory() as session, session.begin():
                 outcome = await self.service.answer(session, request)
+
+        if self.session_manager is not None and outcome is not None and outcome.text:
+            await self.session_manager.add_turn(
+                session_id=session_id,
+                user_query=question,
+                assistant_response=outcome.text,
+            )
         metrics = outcome.metrics
         logger.info(
             "discord_answer_completed",
@@ -358,28 +377,36 @@ async def run_discord_bot(settings: Settings) -> None:
         retriever = DatabaseHybridRetriever(
             factory, embedding, reranker, knowledge_retriever=knowledge_retriever
         )
-        if settings.nexon_api_key is None:
-            agent_service: DurableAgentService | AgentNotConfiguredService = (
-                AgentNotConfiguredService(factory)
-            )
-        else:
+        local_registry = (
+            build_local_tool_registry(retriever, knowledge_retriever)
+            .merged_with(build_exp_skills_registry())
+            .merged_with(build_job_guide_skills_registry())
+        )
+        if settings.nexon_api_key is not None:
             nexon_client = NexonOpenAPIClient(api_key=settings.nexon_api_key.get_secret_value())
-            registry = build_nexon_tool_registry(nexon_client).merged_with(
-                build_local_tool_registry(retriever, knowledge_retriever)
-            )
-            agent_service = DurableAgentService(
-                factory,
-                NexonAgentService(
-                    llm,
-                    registry,
-                    max_tool_calls=settings.agent_max_tool_calls,
-                ),
-            )
+            registry = build_nexon_tool_registry(nexon_client).merged_with(local_registry)
+        else:
+            registry = local_registry
+        agent_service = DurableAgentService(
+            factory,
+            NexonAgentService(
+                llm,
+                registry,
+                max_tool_calls=settings.agent_max_tool_calls,
+            ),
+        )
         qa_service = QAService(retriever, llm, knowledge_retriever=knowledge_retriever)
+        session_manager = SessionManager(
+            host="127.0.0.1",
+            port=6379,
+            history_limit=5,
+            ttl_seconds=3600,
+        )
         handler = DatabaseAnswerHandler(
             factory,
             qa_service,
             agent_service,
+            session_manager=session_manager,
         )
         logger.info("community_thread_graph_enabled")
         source_loader = DatabaseSourceLoader(factory)

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from maple_chat.db.models import AnswerMode
 from maple_chat.discord.routing import (
     DiscordAccessPolicy,
     MessageEnvelope,
@@ -99,6 +101,23 @@ def test_agent_option_is_removed_and_selects_agent_route(policy: DiscordAccessPo
     assert decision.rag_enabled is True
 
 
+def test_agent_first_default_and_no_agent_or_qa_fallback(policy: DiscordAccessPolicy) -> None:
+    default_decision = policy.route(envelope(content="<@99> 경험치 계산해줘"))
+    assert default_decision.accepted is True
+    assert default_decision.question == "경험치 계산해줘"
+    assert default_decision.agent_enabled is True
+
+    no_agent_decision = policy.route(envelope(content="<@99> --no-agent 단순 RAG 질문"))
+    assert no_agent_decision.accepted is True
+    assert no_agent_decision.question == "단순 RAG 질문"
+    assert no_agent_decision.agent_enabled is False
+
+    qa_decision = policy.route(envelope(content="<@99> --qa 단순 QA 질문"))
+    assert qa_decision.accepted is True
+    assert qa_decision.question == "단순 QA 질문"
+    assert qa_decision.agent_enabled is False
+
+
 def test_agent_resume_option_validates_and_extracts_run_id(
     policy: DiscordAccessPolicy,
 ) -> None:
@@ -176,3 +195,44 @@ async def test_mention_only_client_does_not_request_privileged_message_content()
         assert client.intents.message_content is False
     finally:
         await client.close()
+
+
+@pytest.mark.asyncio
+async def test_database_answer_handler_passes_session_context_and_records_turn() -> None:
+    from maple_chat.runtime import DatabaseAnswerHandler
+
+    session_mgr = AsyncMock()
+    session_mgr.build_context_prompt.return_value = "이전 대화 맥락"
+    agent_service = AsyncMock()
+    agent_service.answer.return_value = AnswerOutcome(
+        answer_id="test-ans-1",
+        mode=AnswerMode.GENERATED,
+        text="계산 결과입니다.",
+        sources=(),
+    )
+    handler = DatabaseAnswerHandler(
+        factory=MagicMock(),
+        service=AsyncMock(),
+        agent_service=agent_service,
+        session_manager=session_mgr,
+    )
+    env = envelope(guild_id=1, channel_id=10, author_id=20, message_id=30)
+    outcome = await handler.handle(
+        message=env,
+        question="다음 레벨까지 몇 마리 잡아야 해?",
+        requester_hash="hash123",
+        rag_enabled=True,
+        rag_mode=RAGQueryMode.HYBRID,
+        agent_enabled=True,
+        agent_resume_id=None,
+    )
+
+    assert outcome.text == "계산 결과입니다."
+    session_mgr.build_context_prompt.assert_awaited_once_with("discord:10:20")
+    agent_service.answer.assert_awaited_once()
+    assert agent_service.answer.call_args.kwargs["context_prompt"] == "이전 대화 맥락"
+    session_mgr.add_turn.assert_awaited_once_with(
+        session_id="discord:10:20",
+        user_query="다음 레벨까지 몇 마리 잡아야 해?",
+        assistant_response="계산 결과입니다.",
+    )

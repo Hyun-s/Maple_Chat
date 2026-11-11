@@ -47,12 +47,14 @@ class DiscordAccessPolicy:
         bot_user_id: int,
         blocked_user_ids: frozenset[int] = frozenset(),
         max_question_length: int = 1800,
+        default_agent_enabled: bool = True,
     ) -> None:
         self.guild_ids = guild_ids
         self.channel_ids = channel_ids
         self.bot_user_id = bot_user_id
         self.blocked_user_ids = blocked_user_ids
         self.max_question_length = max_question_length
+        self.default_agent_enabled = default_agent_enabled
 
     def route(self, message: MessageEnvelope) -> RouteDecision:
         if message.author_is_bot or message.from_webhook:
@@ -72,7 +74,7 @@ class DiscordAccessPolicy:
         question = " ".join(question.split())
         rag_enabled = True
         rag_mode = RAGQueryMode.MIX
-        agent_enabled = False
+        agent_enabled = self.default_agent_enabled
         agent_resume_id: str | None = None
         while True:
             option, separator, remainder = question.partition(" ")
@@ -91,6 +93,8 @@ class DiscordAccessPolicy:
                 continue
             elif normalized_option == "--agent":
                 agent_enabled = True
+            elif normalized_option in ("--no-agent", "--qa"):
+                agent_enabled = False
             elif normalized_option == "--agent-resume":
                 run_id, run_separator, run_remainder = remainder.partition(" ")
                 if not run_id or _RUN_ID.fullmatch(run_id) is None:

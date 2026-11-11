@@ -101,6 +101,7 @@ def test_untrusted_evidence_is_serialized_as_data_under_explicit_system_rule() -
     assert "직업명·직업 계층" in messages[0].content
     assert "canonical_knowledge_json" in messages[0].content
     assert "12문장 이내" in messages[0].content
+    assert "질문의 무게와 길이" in messages[0].content
     assert "소제목" in messages[0].content
     assert "글머리표" in messages[0].content
     assert "<untrusted_evidence_json>" in messages[1].content

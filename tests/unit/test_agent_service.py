@@ -237,3 +237,12 @@ async def test_agent_reconstructs_prior_steps_without_repeating_tool() -> None:
     assert executions == 0
     assert len(result.steps) == 1
     assert "official_value" in generator.calls[0][-1].content
+
+
+def test_agent_system_prompt_includes_gameplay_mechanics_fallback() -> None:
+    from maple_chat.agent.service import _agent_system_prompt
+
+    prompt = _agent_system_prompt("catalog_test", 4)
+    assert "플레이 메커니즘" in prompt or "딜사이클" in prompt
+    assert "무조건 거절하지 말고" in prompt
+    assert "일반적인 스킬 운용 상식" in prompt
