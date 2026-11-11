@@ -22,7 +22,11 @@ from sqlalchemy import text
 
 from maple_chat.config import ProcessRole, load_settings
 from maple_chat.db.session import create_engine, create_session_factory
-from maple_chat.knowledge.skill_catalog import get_job_skill_whitelist, validate_guide_skills
+from maple_chat.knowledge.skill_catalog import (
+    get_grounded_v_matrix,
+    get_job_skill_whitelist,
+    validate_guide_skills,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 TAXONOMY_PATH = PROJECT_ROOT / "src" / "maple_chat" / "knowledge" / "data" / "job-taxonomy-v1.json"
@@ -254,6 +258,13 @@ burst_rotation의 steps, pre_buff 및 core_v_matrix 작성 시 반드시 아래 
                 parsed = json.loads(clean_text)
                 parsed["job_name"] = job_name
                 parsed["job_family"] = job_family
+
+                # Grounding: Enforce verified core_v_matrix from skill catalog if available
+                grounded_vm = get_grounded_v_matrix(job_name)
+                if grounded_vm:
+                    parsed["core_v_matrix"] = grounded_vm
+                    print(f"  [GROUNDING] Overwrote core_v_matrix with verified catalog data for {job_name}")
+
                 val_res = validate_guide_skills(parsed, job_name)
                 parsed.setdefault("metadata", {})["skill_validation"] = val_res
                 print(f"  [SKILL-VALIDATION] Valid: {val_res['valid']} | Match: {val_res['matched_count']} / {val_res['matched_count'] + val_res['unknown_count']} ({val_res['match_ratio']*100:.1f}%)")

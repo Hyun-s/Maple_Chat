@@ -33,6 +33,12 @@ def get_job_skill_details(job_name: str) -> dict[str, Any] | None:
     catalog = load_skill_catalog()
     return catalog.get("jobs", {}).get(job_name)
 
+def get_grounded_v_matrix(job_name: str) -> dict[str, Any] | None:
+    details = get_job_skill_details(job_name)
+    if not details:
+        return None
+    return details.get("v_matrix")
+
 def validate_guide_skills(guide_json: dict[str, Any], job_name: str) -> dict[str, Any]:
     whitelist = set(get_job_skill_whitelist(job_name))
     if not whitelist:
