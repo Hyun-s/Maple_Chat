@@ -44,18 +44,6 @@ FAMILY_COMMON_SKILLS = {
 }
 
 def get_job_entities() -> list[dict[str, Any]]:
-    with open(TAXONOMY_PATH, "r", encoding="utf-8") as f:
-        d = json.load(f)
-    
-    # Map entity_id to family canonical_name
-    family_map = {
-        "job-family:warrior": "전사",
-        "job-family:magician": "마법사",
-        "job-family:archer": "궁수",
-        "job-family:thief": "도적",
-        "job-family:pirate": "해적",
-    }
-    
     # Assign families
     job_family_lookup = {
         "히어로": "전사", "팔라딘": "전사", "다크나이트": "전사", "소울마스터": "전사",
@@ -74,13 +62,7 @@ def get_job_entities() -> list[dict[str, Any]]:
         "렌": "전사", "레테": "마법사"
     }
 
-    jobs = []
-    for e in d['entities']:
-        if e['entity_type'] == 'job':
-            name = e['canonical_name']
-            fam = job_family_lookup.get(name, "전사")
-            jobs.append({"name": name, "family": fam})
-    return jobs
+    return [{"name": name, "family": fam} for name, fam in job_family_lookup.items()]
 
 def fetch_wiki_html(job_name: str) -> tuple[str, str] | tuple[None, None]:
     candidates = [
