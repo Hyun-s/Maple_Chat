@@ -250,19 +250,26 @@ burst_rotation의 steps, pre_buff 및 core_v_matrix 작성 시 반드시 아래 
             {"role": "system", "content": "당신은 메이플스토리 최고 수준의 전투 메커니즘 및 직업 공략 전문가입니다. 반드시 오직 유효한 단일 JSON 객체만을 출력하세요."},
             {"role": "user", "content": prompt},
         ],
-        "max_tokens": 3000,
+        "max_tokens": 6000,
         "temperature": 0.1,
-        "chat_template_kwargs": {"enable_thinking": False},
+        "reasoning_effort": "xhigh",
+        "thinking_budget": 1536,
+        "chat_template_kwargs": {"enable_thinking": True},
     }
 
     print(f"  [LOCAL-LLM] Sending request to {url} (model={model}, prompt_len={len(prompt)} chars)...")
     for attempt in range(3):
         try:
             t_req = time.time()
-            resp = requests.post(url, json=payload, timeout=180)
+            resp = requests.post(url, json=payload, timeout=400)
             print(f"  [LOCAL-LLM] Response received in {round(time.time()-t_req, 2)}s (status {resp.status_code})")
             if resp.status_code == 200:
                 data = resp.json()
+                usage = data.get('usage', {})
+                comp_details = usage.get('completion_tokens_details', {})
+                r_tokens = comp_details.get('reasoning_tokens', 0)
+                if r_tokens:
+                    print(f"  [LOCAL-LLM] Thinking tokens generated: {r_tokens} (reasoning_effort=xhigh)")
                 msg = data['choices'][0]['message']
                 text_content = msg.get('content') or ""
                 clean_text = text_content.strip()
