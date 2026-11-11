@@ -115,43 +115,52 @@ def validate_guide_skills(guide_dict: dict[str, Any], job_name: str) -> dict[str
         for pb in br.get("pre_buff", []):
             guide_skills.add(pb)
         for step in br.get("steps", []):
-            words = re.findall(r'[가-힣A-Za-z0-9_]+', step)
-            for w in words:
-                if w in whitelist:
-                    guide_skills.add(w)
-                elif len(w) >= 2:
-                    guide_skills.add(w)
+            for s in whitelist:
+                if s in step:
+                    guide_skills.add(s)
     elif isinstance(br, list):
         for step in br:
-            words = re.findall(r'[가-힣A-Za-z0-9_]+', step)
-            for w in words:
-                if w in whitelist:
-                    guide_skills.add(w)
-                elif len(w) >= 2:
-                    guide_skills.add(w)
+            for s in whitelist:
+                if s in step:
+                    guide_skills.add(s)
+
+    buff_seq = guide_dict.get("buff_sequence", {})
+    if isinstance(buff_seq, dict):
+        for buff_list in buff_seq.values():
+            if isinstance(buff_list, list):
+                for b in buff_list:
+                    guide_skills.add(b)
+
+    dc = guide_dict.get("deal_cycle", {})
+    if isinstance(dc, dict):
+        for cycle_steps in dc.values():
+            if isinstance(cycle_steps, list):
+                for step in cycle_steps:
+                    for s in whitelist:
+                        if s in step:
+                            guide_skills.add(s)
 
     cv = guide_dict.get("core_v_matrix", {})
     if isinstance(cv, dict):
-        for core_type in ["스킬_코어", "6차_코어", "강화_코어"]:
-            for c in cv.get(core_type, []):
-                cleaned = re.sub(r'^(오리진|마스터리 코어|스킬 코어)[\s:]*', '', c).strip()
-                if cleaned in whitelist:
-                    guide_skills.add(cleaned)
-                else:
-                    matched = False
-                    for w in whitelist:
-                        if w in cleaned:
-                            guide_skills.add(w)
-                            matched = True
-                    if not matched and cleaned:
+        for core_list in cv.values():
+            if isinstance(core_list, list):
+                for core_str in core_list:
+                    cleaned = re.sub(r'^(오리진|마스터리 코어|스킬 코어|강화 코어)[\s:]*', '', core_str).strip()
+                    matched_core = False
+                    for s in whitelist:
+                        if s in cleaned or cleaned in s:
+                            guide_skills.add(s)
+                            matched_core = True
+                    if not matched_core and cleaned:
                         guide_skills.add(cleaned)
 
-    unknown = {s for s in guide_skills if s not in whitelist and not any(w in s for w in whitelist)}
-    matched = guide_skills - unknown
+    matched = guide_skills & whitelist
+    unknown = guide_skills - whitelist
     match_ratio = len(matched) / max(1, len(guide_skills))
     return {
         "valid": len(unknown) == 0,
+        "match_ratio": round(match_ratio, 2),
         "matched_skills": sorted(list(matched)),
         "unknown_skills": sorted(list(unknown)),
-        "match_ratio": match_ratio,
     }
+
