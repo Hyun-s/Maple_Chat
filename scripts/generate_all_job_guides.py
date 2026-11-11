@@ -272,6 +272,11 @@ def validate_sync_and_commit(updated_jobs: list[str]) -> bool:
         print(f"--- [AUTO-COMMIT] 2. Syncing updated guides to production: {prod_root} ---")
         prod_guides = prod_root / "src" / "maple_chat" / "skills" / "guides"
         prod_guides.mkdir(parents=True, exist_ok=True)
+        prod_history = prod_guides / "history"
+        prod_history.mkdir(parents=True, exist_ok=True)
+        if HISTORY_DIR.exists():
+            for h_file in HISTORY_DIR.glob("*.json"):
+                shutil.copy2(h_file, prod_history / h_file.name)
         for j in updated_jobs:
             src_f = GUIDES_DIR / f"{j}.json"
             if src_f.exists():
@@ -352,8 +357,22 @@ async def process_all_jobs(
         print(f"  Extracted {len(candidates)} DB candidates with recency weighting")
 
         try:
-            guide_json = call_gemini_for_guide(name, family, candidates, api_key)
             out_path = GUIDES_DIR / f"{name}.json"
+            if out_path.exists():
+                try:
+                    HISTORY_DIR.mkdir(parents=True, exist_ok=True)
+                    with open(out_path, "r", encoding="utf-8") as f_prev:
+                        prev_data = json.load(f_prev)
+                    prev_date = prev_data.get("metadata", {}).get("last_updated") or "legacy"
+                    ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    history_file = HISTORY_DIR / f"{name}_{prev_date}_{ts}.json"
+                    with open(history_file, "w", encoding="utf-8") as f_hist:
+                        json.dump(prev_data, f_hist, ensure_ascii=False, indent=2)
+                    print(f"  [ARCHIVE] Previous version saved: history/{history_file.name}")
+                except Exception as h_err:
+                    print(f"  [WARN] Failed to archive previous version: {h_err}")
+
+            guide_json = call_gemini_for_guide(name, family, candidates, api_key)
             with open(out_path, "w", encoding="utf-8") as f:
                 json.dump(guide_json, f, ensure_ascii=False, indent=2)
             print(f"  Successfully generated and saved: {out_path.name}")
