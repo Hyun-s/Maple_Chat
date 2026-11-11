@@ -12,7 +12,7 @@ from maple_chat.knowledge.skill_catalog import (
 def test_load_skill_catalog():
     cat = load_skill_catalog(force_reload=True)
     assert "jobs" in cat
-    assert "common_skills" in cat
+    assert "universal_common_skills" in cat or "common_skills" in cat
     assert cat["total_jobs"] >= 48
     assert "섀도어" in cat["jobs"]
 
@@ -22,6 +22,13 @@ def test_get_job_skill_whitelist_shadower():
     assert "암살" in wl
     assert "소닉 블로우" in wl
     assert "레디 투 다이" in wl
+
+def test_get_job_skill_whitelist_phantom_isolation():
+    wl = get_job_skill_whitelist("팬텀")
+    assert "조커" in wl
+    assert "레디 투 다이" in wl
+    assert "오버로드 마나" not in wl
+    assert "오라 웨폰" not in wl
 
 def test_get_grounded_v_matrix():
     vm = get_grounded_v_matrix("섀도어")

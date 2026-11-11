@@ -24,10 +24,16 @@ def get_job_skill_whitelist(job_name: str) -> list[str]:
     catalog = load_skill_catalog()
     jobs = catalog.get("jobs", {})
     job_info = jobs.get(job_name)
-    common = catalog.get("common_skills", [])
     if not job_info:
-        return common
-    return sorted(list(set(job_info.get("official_skills", []) + common)))
+        return catalog.get("universal_common_skills", catalog.get("common_skills", []))
+    return sorted(list(set(job_info.get("official_skills", []))))
+
+def get_job_taxonomy(job_name: str) -> dict[str, Any] | None:
+    catalog = load_skill_catalog()
+    job_info = catalog.get("jobs", {}).get(job_name)
+    if not job_info:
+        return None
+    return job_info.get("taxonomy")
 
 def get_job_skill_details(job_name: str) -> dict[str, Any] | None:
     catalog = load_skill_catalog()
@@ -45,10 +51,26 @@ def validate_guide_skills(guide_json: dict[str, Any], job_name: str) -> dict[str
         return {"valid": True, "unknown_skills": [], "matched_skills": [], "ratio": 1.0}
 
     found_skills: set[str] = set()
-    # Extract skills from burst_rotation
+
+    # Extract skills from buff_sequence (일반 버프, 극딜 시퀀스, 준극 시퀀스)
+    buff_seq = guide_json.get("buff_sequence", {})
+    if isinstance(buff_seq, dict):
+        for b_list in [
+            buff_seq.get("일반_버프", []),
+            buff_seq.get("극딜_시퀀스", []),
+            buff_seq.get("준극_시퀀스", []),
+        ]:
+            if isinstance(b_list, list):
+                for pb in b_list:
+                    for part in re.split(r"[+,/]|그리고|및|의 축복", str(pb)):
+                        cleaned = re.sub(r"^[0-9]+\.\s*|시퀀스 버프:|버프:|\([^)]*\)", "", part).strip()
+                        if len(cleaned) >= 2:
+                            found_skills.add(cleaned)
+
+    # Extract skills from burst_rotation (legacy compatibility)
     burst = guide_json.get("burst_rotation", {})
     for pb in burst.get("pre_buff", []):
-        for part in re.split(r"[+,/]|그리고|및|의 축복", pb):
+        for part in re.split(r"[+,/]|그리고|및|의 축복", str(pb)):
             cleaned = re.sub(r"^[0-9]+\.\s*|시퀀스 버프:|버프:|\([^)]*\)", "", part).strip()
             if len(cleaned) >= 2:
                 found_skills.add(cleaned)

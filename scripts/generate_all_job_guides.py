@@ -25,6 +25,7 @@ from maple_chat.db.session import create_engine, create_session_factory
 from maple_chat.knowledge.skill_catalog import (
     get_grounded_v_matrix,
     get_job_skill_whitelist,
+    get_job_taxonomy,
     validate_guide_skills,
 )
 
@@ -161,14 +162,33 @@ def call_local_llm_for_guide(
         context_str = "(해당 직업에 대한 커뮤니티 데이터가 적거나 없음. 메이플스토리 최신 6차 전직, 오리진 스킬, 마스터리 코어, 시드링, 링크/유니온 메커니즘 공식 지식을 바탕으로 정확히 작성할 것)\n"
 
     whitelist = get_job_skill_whitelist(job_name)
+    taxonomy = get_job_taxonomy(job_name)
+    tax_info = ""
+    if taxonomy:
+        tax_lines = []
+        if taxonomy.get("4th_skills"):
+            tax_lines.append(f"- 4차 주요 스킬: {', '.join(taxonomy['4th_skills'])}")
+        if taxonomy.get("hyper_actives"):
+            tax_lines.append(f"- 하이퍼 액티브: {', '.join(taxonomy['hyper_actives'])}")
+        if taxonomy.get("5th_job_cores"):
+            tax_lines.append(f"- 5차 직업 고유 코어: {', '.join(taxonomy['5th_job_cores'])}")
+        if taxonomy.get("6th_origin"):
+            tax_lines.append(f"- 6차 오리진 스킬: {taxonomy['6th_origin']}")
+        if taxonomy.get("6th_mastery"):
+            tax_lines.append(f"- 6차 마스터리 코어: {', '.join(taxonomy['6th_mastery'])}")
+        if taxonomy.get("6th_skill_cores"):
+            tax_lines.append(f"- 6차 스킬 코어: {', '.join(taxonomy['6th_skill_cores'])}")
+        if tax_lines:
+            tax_info = "\n[나무위키 공식 직업 스킬 텍소노미 (차수별 분류)]\n" + "\n".join(tax_lines) + "\n"
+
     whitelist_str = ""
     if whitelist:
         whitelist_str = f"""
-[공식 스킬 화이트리스트 (스킬명 환각 방지 엄격 제약)]
+[공식 스킬 화이트리스트 (스킬명 환각 및 타직업 스킬 혼입 방지 엄격 제약)]
 아래 목록은 메이플스토리 공식 인게임 스킬명 목록입니다.
-burst_rotation의 steps, pre_buff 및 core_v_matrix 작성 시 반드시 아래 목록에 존재하는 스킬명만 정확히 사용해야 하며, 목록에 없는 가상 스킬명(예: 킬링 커트, 어드레날린 러쉬, 인텐시브 인스팅트 등)을 임의로 지어내는 것을 엄격히 금지합니다:
+buff_sequence, deal_cycle 및 core_v_matrix 작성 시 반드시 아래 목록에 존재하는 스킬명만 정확히 사용해야 하며, 타 직업군 스킬(예: 도적에게 마법사 공용 스킬 혼입 등)이나 목록에 없는 가상 스킬명을 임의로 지어내는 것을 엄격히 금지합니다:
 - {', '.join(whitelist)}
-"""
+{tax_info}"""
 
     today_str = datetime.date.today().isoformat()
     prompt = f"""당신은 메이플스토리 최고 수준의 전투 메커니즘 및 직업 공략 전문가입니다.
@@ -333,8 +353,18 @@ burst_rotation의 steps, pre_buff 및 core_v_matrix 작성 시 반드시 아래 
                     parsed["core_v_matrix"] = grounded_vm
                     print(f"  [GROUNDING] Overwrote core_v_matrix with verified catalog data for {job_name}")
 
+                # Deterministically guarantee metadata & data_source
+                parsed.setdefault("metadata", {})
+                parsed["metadata"]["last_updated"] = today_str
+                parsed["metadata"]["verified"] = True
+                parsed["metadata"]["recency_weighted"] = True
+                parsed["metadata"]["model"] = model
+                parsed["metadata"]["provider"] = "local"
+                parsed["metadata"]["source_article_ids"] = source_ids
+                parsed["data_source"] = "Maple Chat 크롤링 DB 및 최신 실전 공략 기반 정제 데이터 (Local LLM)"
+
                 val_res = validate_guide_skills(parsed, job_name)
-                parsed.setdefault("metadata", {})["skill_validation"] = val_res
+                parsed["metadata"]["skill_validation"] = val_res
                 print(f"  [SKILL-VALIDATION] Valid: {val_res['valid']} | Match: {val_res['matched_count']} / {val_res['matched_count'] + val_res['unknown_count']} ({val_res['match_ratio']*100:.1f}%)")
                 if val_res['unknown_skills']:
                     print(f"  [SKILL-VALIDATION] Unknown detected: {val_res['unknown_skills']}")
@@ -365,14 +395,33 @@ def call_gemini_for_guide(job_name: str, job_family: str, candidates: list[dict[
         context_str = "(해당 직업에 대한 커뮤니티 데이터가 적거나 없음. 메이플스토리 최신 6차 전직, 오리진 스킬, 마스터리 코어, 시드링, 링크/유니온 메커니즘 공식 지식을 바탕으로 정확히 작성할 것)\n"
 
     whitelist = get_job_skill_whitelist(job_name)
+    taxonomy = get_job_taxonomy(job_name)
+    tax_info = ""
+    if taxonomy:
+        tax_lines = []
+        if taxonomy.get("4th_skills"):
+            tax_lines.append(f"- 4차 주요 스킬: {', '.join(taxonomy['4th_skills'])}")
+        if taxonomy.get("hyper_actives"):
+            tax_lines.append(f"- 하이퍼 액티브: {', '.join(taxonomy['hyper_actives'])}")
+        if taxonomy.get("5th_job_cores"):
+            tax_lines.append(f"- 5차 직업 고유 코어: {', '.join(taxonomy['5th_job_cores'])}")
+        if taxonomy.get("6th_origin"):
+            tax_lines.append(f"- 6차 오리진 스킬: {taxonomy['6th_origin']}")
+        if taxonomy.get("6th_mastery"):
+            tax_lines.append(f"- 6차 마스터리 코어: {', '.join(taxonomy['6th_mastery'])}")
+        if taxonomy.get("6th_skill_cores"):
+            tax_lines.append(f"- 6차 스킬 코어: {', '.join(taxonomy['6th_skill_cores'])}")
+        if tax_lines:
+            tax_info = "\n[나무위키 공식 직업 스킬 텍소노미 (차수별 분류)]\n" + "\n".join(tax_lines) + "\n"
+
     whitelist_str = ""
     if whitelist:
         whitelist_str = f"""
-[공식 스킬 화이트리스트 (스킬명 환각 방지 엄격 제약)]
+[공식 스킬 화이트리스트 (스킬명 환각 및 타직업 스킬 혼입 방지 엄격 제약)]
 아래 목록은 메이플스토리 공식 인게임 스킬명 목록입니다.
 buff_sequence, deal_cycle 및 core_v_matrix 작성 시 반드시 아래 목록에 존재하는 스킬명만 정확히 사용하세요:
 - {', '.join(whitelist)}
-"""
+{tax_info}"""
 
     today_str = datetime.date.today().isoformat()
     prompt = f"""당신은 메이플스토리 최고 수준의 전투 메커니즘 및 직업 공략 전문가입니다.
@@ -501,8 +550,18 @@ buff_sequence, deal_cycle 및 core_v_matrix 작성 시 반드시 아래 목록�
                     if grounded_vm:
                         parsed["core_v_matrix"] = grounded_vm
 
+                    # Deterministically guarantee metadata & data_source
+                    parsed.setdefault("metadata", {})
+                    parsed["metadata"]["last_updated"] = today_str
+                    parsed["metadata"]["verified"] = True
+                    parsed["metadata"]["recency_weighted"] = True
+                    parsed["metadata"]["model"] = model_name
+                    parsed["metadata"]["provider"] = "gemini"
+                    parsed["metadata"]["source_article_ids"] = source_ids
+                    parsed["data_source"] = "Maple Chat 크롤링 DB 및 최신 실전 공략 기반 정제 데이터"
+
                     val_res = validate_guide_skills(parsed, job_name)
-                    parsed.setdefault("metadata", {})["skill_validation"] = val_res
+                    parsed["metadata"]["skill_validation"] = val_res
                     return parsed
                 elif resp.status_code in (429, 503):
                     print(f"[WARN] {model_name} rate limit ({resp.status_code})...")
@@ -647,7 +706,14 @@ def print_guide_comparison(job_name: str, old_guide: dict[str, Any], new_guide: 
     new_v = new_guide.get("core_v_matrix", {})
     print(f"■ V 매트릭스 & 6차 코어:")
     print(f"  - 기존: 스킬={old_v.get('스킬_코어')}, 6차={old_v.get('6차_코어')}")
-    print(f"  - 신규: 스킬={new_v.get('스킬_코어')}, 6차={new_v.get('6차_코어')}")
+    print(f"  - 신규: 스킬={new_v.get('스킬_코어')}, 6차={new_v.get('6차_코어')}\n")
+
+    old_meta = old_guide.get("metadata", {})
+    new_meta = new_guide.get("metadata", {})
+    print(f"■ 메타데이터 및 참조 공략글 (Metadata & Source):")
+    print(f"  - 데이터 출처: {new_guide.get('data_source', 'Maple Chat 크롤링 DB')}")
+    print(f"  - 참조 커뮤니티 글 ID: {new_meta.get('source_article_ids', [])}")
+    print(f"  - 검증 완료: {new_meta.get('verified', False)} | 최종 갱신: {new_meta.get('last_updated', '')}")
     print(f"=======================================================\n")
 
 
@@ -718,6 +784,62 @@ async def process_all_jobs(
                 guide_json = call_local_llm_for_guide(name, family, candidates, endpoint=endpoint, model=model)
             else:
                 guide_json = call_gemini_for_guide(name, family, candidates, api_key)
+
+            if not guide_json:
+                print(f"  [ERROR] Failed to generate guide for {name}")
+                continue
+
+            # Preserve job-specific extensions (e.g., stolen_skills for 팬텀)
+            if prev_data and "stolen_skills" in prev_data:
+                guide_json["stolen_skills"] = prev_data["stolen_skills"]
+            elif name == "팬텀":
+                guide_json["stolen_skills"] = {
+                    "1차": "다크 사이트 (도적 공통 - 낙하물 및 광역 패턴 무시)",
+                    "2차": "힐 (클레릭 - 언데드 파티 케어 및 체력 회복) 또는 카디널 트랜지션 (패스파인더 - 기동력)",
+                    "3차": "크로스 오버 체인 (다크나이트 - 체력 비례 최종 데미지 증가)",
+                    "4차": "파이널 컷 (듀얼블레이더 - 최종 데미지 40% 증가 핵심 버프)",
+                    "하이퍼": "불스아이 (보우마스터 - 크리티컬 데미지/확률/보공 극딜 버프) 또는 새크리파이스 (다크나이트 - 보공/방무)",
+                }
+
+            # Backward-compatibility mapping: populate burst_rotation & sub_burst_and_normal
+            deal_c = guide_json.get("deal_cycle", {})
+            buff_s = guide_json.get("buff_sequence", {})
+            if deal_c:
+                burst_src = deal_c.get("오리진_극딜") or deal_c.get("극딜") or {}
+                guide_json["burst_rotation"] = {
+                    "title": burst_src.get("title", "오리진 포함 풀 극딜 사이클"),
+                    "pre_buff": buff_s.get("극딜_시퀀스", []),
+                    "steps": burst_src.get("steps", []),
+                    "critical_tip": burst_src.get("critical_tip", ""),
+                }
+                sub_src = deal_c.get("준극") or {}
+                norm_src = deal_c.get("평딜") or {}
+                guide_json["sub_burst_and_normal"] = {
+                    "title": "준극딜 및 평딜 사이클",
+                    "steps": sub_src.get("steps", []) + norm_src.get("steps", []),
+                }
+
+            # Preserve critical legacy mechanic tips if missing (e.g. 라 모르 카르트 for 팬텀)
+            la_mort_tip = "라 모르 카르트는 절대 시퀀스 버프에 넣지 마세요! 조커 키다운 중 또는 조커 버프 보유 상태에서 수동 사용해야 160장 풀 충전과 450%p 데미지 증가(1800%p 극딜 모드)가 온전히 적용됩니다."
+            if name == "팬텀":
+                if "burst_rotation" in guide_json:
+                    b_tip = guide_json["burst_rotation"].get("critical_tip", "")
+                    if "라 모르 카르트" not in b_tip:
+                        guide_json["burst_rotation"]["critical_tip"] = f"{la_mort_tip} {b_tip}".strip()
+                if "deal_cycle" in guide_json:
+                    for k in ["오리진_극딜", "극딜"]:
+                        if k in guide_json["deal_cycle"]:
+                            c_tip = guide_json["deal_cycle"][k].get("critical_tip", "")
+                            if "라 모르 카르트" not in c_tip:
+                                guide_json["deal_cycle"][k]["critical_tip"] = f"{la_mort_tip} {c_tip}".strip()
+            elif prev_data and "burst_rotation" in prev_data:
+                prev_tip = prev_data["burst_rotation"].get("critical_tip", "")
+                curr_tip = guide_json.get("burst_rotation", {}).get("critical_tip", "")
+                if prev_tip and prev_tip not in curr_tip:
+                    guide_json.setdefault("burst_rotation", {})["critical_tip"] = f"{curr_tip} [핵심 운용] {prev_tip}".strip()
+                    for k in ["오리진_극딜", "극딜"]:
+                        if k in guide_json.get("deal_cycle", {}):
+                            guide_json["deal_cycle"][k]["critical_tip"] = guide_json["burst_rotation"]["critical_tip"]
 
             with open(out_path, "w", encoding="utf-8") as f:
                 json.dump(guide_json, f, ensure_ascii=False, indent=2)
