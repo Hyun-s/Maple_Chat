@@ -184,24 +184,47 @@ burst_rotation의 steps, pre_buff 및 core_v_matrix 작성 시 반드시 아래 
 
 [작성 규칙]
 1. 반드시 오직 유효한 단일 JSON 객체만을 출력해야 합니다. 마크다운 따옴표(```json)나 부가 설명 없이 순수 JSON만 출력하세요.
-2. 환각(없는 스킬명 지어내기)을 절대 금지하며, 반드시 해당 직업의 실제 5차/6차/오리진/하이퍼/주력기 스킬명을 정확히 사용하세요.
-3. burst_rotation의 steps는 1단계부터 번호를 매겨 버프 시전 순서, 디버프/설치, 오리진 및 바인드, 핵심 딜압축(키다운/연계), 시드링 활용, 마무리까지 실전에서 쓰이는 완벽한 순서로 작성하세요.
-4. critical_tip에는 유저들이 자주 실수하거나 딜 누수를 방지하는 실전 팁(예: 캔슬법, 특정 스킬 동시 시전, 수동 발동 요령 등)을 명확히 기재하세요.
-5. 최신 정보 우선 원칙: 각 공략글의 작성일자(date)와 최신성 점수(score)를 최우선으로 고려하세요. 가장 최근에 작성된 공략글의 6차 마스터리 코어, 최신 밸런스 패치 후 딜사이클 및 코강 우선순위를 최우선으로 반영하세요.
-6. 필수 필드 스키마:
+2. 환각(없는 스킬명 지어내기)을 절대 금지하며, 반드시 해당 직업의 실제 5차/6차/오리진/하이퍼/주력기/공용 스킬명을 정확히 사용하세요.
+3. 버프 시퀀스 (buff_sequence) 분류 원칙 (단순 pre_buff 대신 용도별로 명확히 분리):
+   - 일반_버프: 메이플 용사, 쓸만한 스킬(쓸샾, 쓸컴오, 쓸윈부 등) 및 상시 지속 패시브/버프
+   - 극딜_시퀀스: 오리진/극딜 직전 순서대로 시전하는 버프 및 시드링 (메여축/이여축, 직업 고유 극딜버프, 엔버링크, 리스트레인트 링 등)
+   - 준극_시퀀스: 준극딜 직전 켜는 버프 (엔버링크, 웨폰퍼프 링, 쿨이 짧은 직업 서브 버프 등)
+4. 딜 사이클 (deal_cycle) 4단계 분리 원칙:
+   - 평딜: 기본 주력기 연계(캔슬법 포함), 스택 유지 및 쿨타임 스킬 운용
+   - 준극: 시드링(웨펖 링 등)을 활용한 준극딜(미니 극딜) 집중 타격 순서 (1단계부터 번호)
+   - 극딜: 오리진 미사용 일반 극딜 주기 (리스트레인트 링 압축 및 주력 극딜기 집중 타격)
+   - 오리진_극딜: 6차 오리진 스킬 쿨이 돌았을 때의 초대형 풀 극딜 (절대 바인드, 오리진 스킬, 리레 링 압축, 전 스킬 풀가동 순서)
+5. critical_tip에는 유저들이 자주 실수하거나 딜 누수를 방지하는 실전 팁(예: 캔슬법, 키다운 유지 요령, 시드링 타이밍 등)을 명확히 기재하세요.
+6. 최신 정보 우선 원칙: 각 공략글의 작성일자(date)와 최신성 점수(score)를 최우선으로 고려하세요.
+
+[필수 필드 스키마]
 {{
   "job_name": "{job_name}",
   "job_family": "{job_family}",
   "summary": "직업의 전투 스타일, 극딜 및 평딜 주기(예: 120초/180초), 특성 한 줄 요약",
-  "burst_rotation": {{
-    "title": "오리진 포함 풀 극딜 사이클 (시드링 압축 연계)",
-    "pre_buff": ["사전 시전해야 할 버프 목록"],
-    "steps": ["1. 단계별 설명", "2. 단계별 설명"],
-    "critical_tip": "실전 필수 팁 및 주의사항"
+  "buff_sequence": {{
+    "일반_버프": ["메이플 용사", "쓸만한 샤프 아이즈", "쓸만한 컴뱃 오더스", "쓸만한 윈드 부스터"],
+    "극딜_시퀀스": ["메이플 여신의 축복", "직업 전용 극딜버프", "소울 컨트랙트", "리스트레인트 링"],
+    "준극_시퀀스": ["직업 전용 준극버프", "소울 컨트랙트", "웨폰퍼프 링"]
   }},
-  "sub_burst_and_normal": {{
-    "title": "준극딜 및 평딜 사이클",
-    "steps": ["평딜 및 준극딜 운용법"]
+  "deal_cycle": {{
+    "평딜": {{
+      "title": "평딜 및 기본기/스택 운용",
+      "steps": ["1. 기본 주력기 연계", "2. 쿨타임 스킬 운용"]
+    }},
+    "준극": {{
+      "title": "준극딜 사이클 (웨펖 링 연계)",
+      "steps": ["1. 준극 버프 시전", "2. 핵심 딜압축"]
+    }},
+    "극딜": {{
+      "title": "일반 극딜 사이클 (오리진 쿨타임 중 리레 링 압축)",
+      "steps": ["1. 극딜 버프 시전", "2. 리레 링 및 주력 극딜기 집중 압축"]
+    }},
+    "오리진_극딜": {{
+      "title": "오리진 포함 풀 극딜 사이클 (절대 바인드 및 오리진 연계)",
+      "steps": ["1. 버프 및 절대 바인드", "2. 오리진 시전", "3. 리레 압축 및 전 극딜기 풀히트"],
+      "critical_tip": "실전 필수 팁 및 주의사항"
+    }}
   }},
   "core_v_matrix": {{
     "스킬_코어": ["우선순위 스킬 코어 목록"],
@@ -259,6 +282,44 @@ burst_rotation의 steps, pre_buff 및 core_v_matrix 작성 시 반드시 아래 
                 parsed["job_name"] = job_name
                 parsed["job_family"] = job_family
 
+                # Backward compatibility mapping for burst_rotation and sub_burst_and_normal
+                dc = parsed.get("deal_cycle", {})
+                buff_seq = parsed.get("buff_sequence", {})
+
+                # Priority for burst_rotation: 오리진_극딜 > 극딜
+                target_burst = dc.get("오리진_극딜") or dc.get("극딜")
+                if target_burst:
+                    parsed["burst_rotation"] = {
+                        "title": target_burst.get("title", "오리진 포함 풀 극딜 사이클 (시드링 압축 연계)"),
+                        "pre_buff": buff_seq.get("극딜_시퀀스", []),
+                        "steps": target_burst.get("steps", []),
+                        "critical_tip": target_burst.get("critical_tip", "") or (dc.get("오리진_극딜", {}).get("critical_tip") or dc.get("극딜", {}).get("critical_tip", "")),
+                    }
+                elif "burst_rotation" in parsed:
+                    if "deal_cycle" not in parsed:
+                        parsed["deal_cycle"] = {
+                            "평딜": {"title": "평딜 사이클", "steps": parsed.get("sub_burst_and_normal", {}).get("steps", [])},
+                            "준극": {"title": "준극딜 사이클", "steps": ["웨펖 링 및 서브 쿨타임 스킬 가동"]},
+                            "극딜": parsed["burst_rotation"],
+                        }
+                    if "buff_sequence" not in parsed:
+                        parsed["buff_sequence"] = {
+                            "일반_버프": ["메이플 용사"],
+                            "극딜_시퀀스": parsed["burst_rotation"].get("pre_buff", []),
+                            "준극_시퀀스": ["소울 컨트랙트", "웨폰퍼프 링"],
+                        }
+
+                if "sub_burst_and_normal" not in parsed:
+                    sub_steps = []
+                    if "준극" in dc:
+                        sub_steps.extend(dc["준극"].get("steps", []))
+                    if "평딜" in dc:
+                        sub_steps.extend(dc["평딜"].get("steps", []))
+                    parsed["sub_burst_and_normal"] = {
+                        "title": "준극딜 및 평딜 사이클",
+                        "steps": sub_steps or ["평딜 및 기본 주력기 운용"],
+                    }
+
                 # Grounding: Enforce verified core_v_matrix from skill catalog if available
                 grounded_vm = get_grounded_v_matrix(job_name)
                 if grounded_vm:
@@ -296,6 +357,16 @@ def call_gemini_for_guide(job_name: str, job_family: str, candidates: list[dict[
     else:
         context_str = "(해당 직업에 대한 커뮤니티 데이터가 적거나 없음. 메이플스토리 최신 6차 전직, 오리진 스킬, 마스터리 코어, 시드링, 링크/유니온 메커니즘 공식 지식을 바탕으로 정확히 작성할 것)\n"
 
+    whitelist = get_job_skill_whitelist(job_name)
+    whitelist_str = ""
+    if whitelist:
+        whitelist_str = f"""
+[공식 스킬 화이트리스트 (스킬명 환각 방지 엄격 제약)]
+아래 목록은 메이플스토리 공식 인게임 스킬명 목록입니다.
+buff_sequence, deal_cycle 및 core_v_matrix 작성 시 반드시 아래 목록에 존재하는 스킬명만 정확히 사용하세요:
+- {', '.join(whitelist)}
+"""
+
     today_str = datetime.date.today().isoformat()
     prompt = f"""당신은 메이플스토리 최고 수준의 전투 메커니즘 및 직업 공략 전문가입니다.
 제공된 커뮤니티 실전 공략 데이터와 메이플스토리 최신 게임 지식(6차 전직 오리진, 마스터리 코어, 리레/웨펖 딜압축, 딜사이클 순서, 코어강화)을 바탕으로 아래 직업의 완벽한 실전 공략 가이드 JSON을 작성하세요.
@@ -304,28 +375,53 @@ def call_gemini_for_guide(job_name: str, job_family: str, candidates: list[dict[
 - 직업명: {job_name}
 - 직업군: {job_family}
 
+{whitelist_str}
+
 {context_str}
 
 [작성 규칙]
 1. 반드시 오직 유효한 단일 JSON 객체만을 출력해야 합니다. 마크다운 따옴표(```json)나 부가 설명 없이 순수 JSON만 출력하세요.
-2. 환각(없는 스킬명 지어내기)을 절대 금지하며, 반드시 해당 직업의 실제 5차/6차/오리진/하이퍼/주력기 스킬명을 정확히 사용하세요.
-3. burst_rotation의 steps는 1단계부터 번호를 매겨 버프 시전 순서, 디버프/설치, 오리진 및 바인드, 핵심 딜압축(키다운/연계), 시드링 활용, 마무리까지 실전에서 쓰이는 완벽한 순서로 작성하세요.
-4. critical_tip에는 유저들이 자주 실수하거나 딜 누수를 방지하는 실전 팁(예: 캔슬법, 특정 스킬 동시 시전, 수동 발동 요령 등)을 명확히 기재하세요.
-5. 최신 정보 우선 원칙: 각 공략글의 작성일자(date)와 최신성 점수(score)를 최우선으로 고려하세요. 가장 최근에 작성된 공략글의 6차 마스터리 코어, 최신 밸런스 패치 후 딜사이클 및 코강 우선순위를 최우선으로 반영하세요. 과거 글과 최근 글의 내용이 상충할 경우 반드시 최근 글을 기준으로 채택하세요.
-6. 필수 필드 스키마:
+2. 환각(없는 스킬명 지어내기)을 절대 금지하며, 반드시 해당 직업의 실제 5차/6차/오리진/하이퍼/주력기/공용 스킬명을 정확히 사용하세요.
+3. 버프 시퀀스 (buff_sequence) 분류 원칙 (단순 pre_buff 대신 용도별로 명확히 분리):
+   - 일반_버프: 메이플 용사, 쓸만한 스킬(쓸샾, 쓸컴오, 쓸윈부 등) 및 상시 지속 패시브/버프
+   - 극딜_시퀀스: 오리진/극딜 직전 순서대로 시전하는 버프 및 시드링 (메여축/이여축, 직업 고유 극딜버프, 엔버링크, 리스트레인트 링 등)
+   - 준극_시퀀스: 준극딜 직전 켜는 버프 (엔버링크, 웨폰퍼프 링, 쿨이 짧은 직업 서브 버프 등)
+4. 딜 사이클 (deal_cycle) 4단계 분리 원칙:
+   - 평딜: 기본 주력기 연계(캔슬법 포함), 스택 유지 및 쿨타임 스킬 운용
+   - 준극: 시드링(웨펖 링 등)을 활용한 준극딜(미니 극딜) 집중 타격 순서 (1단계부터 번호)
+   - 극딜: 오리진 미사용 일반 극딜 주기 (리스트레인트 링 압축 및 주력 극딜기 집중 타격)
+   - 오리진_극딜: 6차 오리진 스킬 쿨이 돌았을 때의 초대형 풀 극딜 (절대 바인드, 오리진 스킬, 리레 링 압축, 전 스킬 풀가동 순서)
+5. critical_tip에는 유저들이 자주 실수하거나 딜 누수를 방지하는 실전 팁(예: 캔슬법, 키다운 유지 요령, 시드링 타이밍 등)을 명확히 기재하세요.
+6. 최신 정보 우선 원칙: 각 공략글의 작성일자(date)와 최신성 점수(score)를 최우선으로 고려하세요.
+
+[필수 필드 스키마]
 {{
   "job_name": "{job_name}",
   "job_family": "{job_family}",
   "summary": "직업의 전투 스타일, 극딜 및 평딜 주기(예: 120초/180초), 특성 한 줄 요약",
-  "burst_rotation": {{
-    "title": "오리진 포함 풀 극딜 사이클 (시드링 압축 연계)",
-    "pre_buff": ["사전 시전해야 할 버프 목록"],
-    "steps": ["1. 단계별 설명", "2. 단계별 설명"],
-    "critical_tip": "실전 필수 팁 및 주의사항"
+  "buff_sequence": {{
+    "일반_버프": ["메이플 용사", "쓸만한 샤프 아이즈", "쓸만한 컴뱃 오더스", "쓸만한 윈드 부스터"],
+    "극딜_시퀀스": ["메이플 여신의 축복", "직업 전용 극딜버프", "소울 컨트랙트", "리스트레인트 링"],
+    "준극_시퀀스": ["직업 전용 준극버프", "소울 컨트랙트", "웨폰퍼프 링"]
   }},
-  "sub_burst_and_normal": {{
-    "title": "준극딜 및 평딜 사이클",
-    "steps": ["평딜 및 준극딜 운용법"]
+  "deal_cycle": {{
+    "평딜": {{
+      "title": "평딜 및 기본기/스택 운용",
+      "steps": ["1. 기본 주력기 연계", "2. 쿨타임 스킬 운용"]
+    }},
+    "준극": {{
+      "title": "준극딜 사이클 (웨펖 링 연계)",
+      "steps": ["1. 준극 버프 시전", "2. 핵심 딜압축"]
+    }},
+    "극딜": {{
+      "title": "일반 극딜 사이클 (오리진 쿨타임 중 리레 링 압축)",
+      "steps": ["1. 극딜 버프 시전", "2. 리레 링 및 주력 극딜기 집중 압축"]
+    }},
+    "오리진_극딜": {{
+      "title": "오리진 포함 풀 극딜 사이클 (절대 바인드 및 오리진 연계)",
+      "steps": ["1. 버프 및 절대 바인드", "2. 오리진 시전", "3. 리레 압축 및 전 극딜기 풀히트"],
+      "critical_tip": "실전 필수 팁 및 주의사항"
+    }}
   }},
   "core_v_matrix": {{
     "스킬_코어": ["우선순위 스킬 코어 목록"],
@@ -370,6 +466,36 @@ def call_gemini_for_guide(job_name: str, job_family: str, candidates: list[dict[
                     parsed = json.loads(clean_text)
                     parsed["job_name"] = job_name
                     parsed["job_family"] = job_family
+
+                    # Backward compatibility mapping
+                    dc = parsed.get("deal_cycle", {})
+                    buff_seq = parsed.get("buff_sequence", {})
+                    target_burst = dc.get("오리진_극딜") or dc.get("극딜")
+                    if target_burst:
+                        parsed["burst_rotation"] = {
+                            "title": target_burst.get("title", "오리진 포함 풀 극딜 사이클"),
+                            "pre_buff": buff_seq.get("극딜_시퀀스", []),
+                            "steps": target_burst.get("steps", []),
+                            "critical_tip": target_burst.get("critical_tip", "") or (dc.get("오리진_극딜", {}).get("critical_tip") or dc.get("극딜", {}).get("critical_tip", "")),
+                        }
+                    if "sub_burst_and_normal" not in parsed:
+                        sub_steps = []
+                        if "준극" in dc:
+                            sub_steps.extend(dc["준극"].get("steps", []))
+                        if "평딜" in dc:
+                            sub_steps.extend(dc["평딜"].get("steps", []))
+                        parsed["sub_burst_and_normal"] = {
+                            "title": "준극딜 및 평딜 사이클",
+                            "steps": sub_steps or ["평딜 및 기본 주력기 운용"],
+                        }
+
+                    # Grounding: Enforce verified core_v_matrix
+                    grounded_vm = get_grounded_v_matrix(job_name)
+                    if grounded_vm:
+                        parsed["core_v_matrix"] = grounded_vm
+
+                    val_res = validate_guide_skills(parsed, job_name)
+                    parsed.setdefault("metadata", {})["skill_validation"] = val_res
                     return parsed
                 elif resp.status_code in (429, 503):
                     print(f"[WARN] {model_name} rate limit ({resp.status_code})...")
@@ -488,17 +614,22 @@ def print_guide_comparison(job_name: str, old_guide: dict[str, Any], new_guide: 
     print(f"  - 기존: {old_burst.get('title')}")
     print(f"  - 신규: {new_burst.get('title')}\n")
 
-    print(f"■ 사전 버프 (Pre-buff):")
-    print(f"  - 기존: {old_burst.get('pre_buff')}")
-    print(f"  - 신규: {new_burst.get('pre_buff')}\n")
+    old_buffs = old_guide.get("buff_sequence", {})
+    new_buffs = new_guide.get("buff_sequence", {})
+    print(f"■ 버프 시퀀스 (Buff Sequence):")
+    print(f"  [일반 버프] {new_buffs.get('일반_버프', old_buffs.get('일반_버프', []))}")
+    print(f"  [극딜 시퀀스] {new_buffs.get('극딜_시퀀스', old_buffs.get('극딜_시퀀스', old_burst.get('pre_buff', [])))}")
+    print(f"  [준극 시퀀스] {new_buffs.get('준극_시퀀스', old_buffs.get('준극_시퀀스', []))}\n")
 
-    print(f"■ 극딜 순서 (Steps):")
-    print(f"  [기존 Gemini (총 {len(old_burst.get('steps', []))}단계)]")
-    for s in old_burst.get('steps', []):
-        print(f"    {s}")
-    print(f"  [신규 Local LLM (총 {len(new_burst.get('steps', []))}단계)]")
-    for s in new_burst.get('steps', []):
-        print(f"    {s}")
+    old_dc = old_guide.get("deal_cycle", {})
+    new_dc = new_guide.get("deal_cycle", {})
+    print(f"■ 딜 사이클 (Deal Cycle):")
+    for stage in ["평딜", "준극", "극딜", "오리진_극딜"]:
+        st = new_dc.get(stage) or old_dc.get(stage)
+        if st:
+            print(f"  [{stage}] {st.get('title', '')}")
+            for s in st.get('steps', []):
+                print(f"    {s}")
     print()
 
     print(f"■ 실전 핵심 팁 (Critical Tip):")

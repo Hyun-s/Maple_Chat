@@ -104,18 +104,26 @@ def get_job_guide(job_name: str, topic: str | None = None) -> dict[str, Any]:
 
     topic_lower = (topic or "").strip().lower()
     if not topic_lower or "전체" in topic_lower:
+        result["buff_sequence"] = target_guide.get("buff_sequence")
+        result["deal_cycle"] = target_guide.get("deal_cycle")
         result["burst_rotation"] = target_guide.get("burst_rotation")
         result["sub_burst_and_normal"] = target_guide.get("sub_burst_and_normal")
         result["stolen_skills"] = target_guide.get("stolen_skills")
         result["core_v_matrix"] = target_guide.get("core_v_matrix")
-    elif "딜" in topic_lower or "사이클" in topic_lower or "극딜" in topic_lower or "순서" in topic_lower:
+    elif any(k in topic_lower for k in ["딜", "사이클", "극딜", "준극", "평딜", "오리진", "순서"]):
+        result["buff_sequence"] = target_guide.get("buff_sequence")
+        result["deal_cycle"] = target_guide.get("deal_cycle")
         result["burst_rotation"] = target_guide.get("burst_rotation")
         result["sub_burst_and_normal"] = target_guide.get("sub_burst_and_normal")
+    elif "버프" in topic_lower or "시퀀스" in topic_lower:
+        result["buff_sequence"] = target_guide.get("buff_sequence")
     elif "스틸" in topic_lower or "훔치" in topic_lower:
         result["stolen_skills"] = target_guide.get("stolen_skills")
     elif "코강" in topic_lower or "코어" in topic_lower or "v매트릭스" in topic_lower:
         result["core_v_matrix"] = target_guide.get("core_v_matrix")
     else:
+        result["buff_sequence"] = target_guide.get("buff_sequence")
+        result["deal_cycle"] = target_guide.get("deal_cycle")
         result["burst_rotation"] = target_guide.get("burst_rotation")
         result["sub_burst_and_normal"] = target_guide.get("sub_burst_and_normal")
         result["stolen_skills"] = target_guide.get("stolen_skills")
