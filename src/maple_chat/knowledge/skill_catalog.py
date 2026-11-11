@@ -1,4 +1,4 @@
-"""Ground truth skill catalog loader, per-job taxonomy, and guide validator.""
+"""Ground truth skill catalog loader, per-job taxonomy, and guide validator."""
 from __future__ import annotations
 
 import json
