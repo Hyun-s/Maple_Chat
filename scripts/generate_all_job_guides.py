@@ -26,6 +26,7 @@ from maple_chat.knowledge.skill_catalog import (
     get_grounded_v_matrix,
     get_job_skill_whitelist,
     get_job_taxonomy,
+    load_skill_catalog,
     validate_guide_skills,
 )
 
@@ -36,22 +37,33 @@ HISTORY_DIR = GUIDES_DIR / "history"
 
 
 def load_taxonomy_jobs() -> list[dict[str, Any]]:
-    with open(TAXONOMY_PATH, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    
-    ent_map = {e['entity_id']: e['canonical_name'] for e in data['entities']}
-    rel_map = {r['subject_entity_id']: ent_map.get(r['object_entity_id'], '기타') for r in data.get('relations', []) if r.get('predicate') == 'is_a'}
-    
-    jobs: list[dict[str, Any]] = []
-    for e in data['entities']:
-        if e.get('entity_type') in ('job', 'character_job'):
-            name = e['canonical_name']
-            family = rel_map.get(e['entity_id']) or e.get('category') or e.get('attributes', {}).get('job_family', '기타')
-            jobs.append({
-                'canonical_name': name,
-                'job_family': family,
-                'aliases': e.get('aliases', [])
-            })
+    if TAXONOMY_PATH.exists():
+        with open(TAXONOMY_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        
+        ent_map = {e['entity_id']: e['canonical_name'] for e in data['entities']}
+        rel_map = {r['subject_entity_id']: ent_map.get(r['object_entity_id'], '기타') for r in data.get('relations', []) if r.get('predicate') == 'is_a'}
+        
+        jobs: list[dict[str, Any]] = []
+        for e in data['entities']:
+            if e.get('entity_type') in ('job', 'character_job'):
+                name = e['canonical_name']
+                family = rel_map.get(e['entity_id']) or e.get('category') or e.get('attributes', {}).get('job_family', '기타')
+                jobs.append({
+                    'canonical_name': name,
+                    'job_family': family,
+                    'aliases': e.get('aliases', [])
+                })
+        return jobs
+
+    cat = load_skill_catalog()
+    jobs = []
+    for name, details in cat.get('jobs', {}).items():
+        jobs.append({
+            'canonical_name': name,
+            'job_family': details.get('job_family', '기타'),
+            'aliases': details.get('aliases', [])
+        })
     return jobs
 
 
@@ -59,7 +71,7 @@ async def extract_db_candidates(
     job_name: str,
     aliases: list[str],
     limit: int = 4,
-    half_life_days: float = 45.0,
+    half_life_days: float = 7.0,
 ) -> list[dict[str, Any]]:
     try:
         settings = load_settings(ProcessRole.INDEX_WORKER)
@@ -87,7 +99,7 @@ async def extract_db_candidates(
             COALESCE(published_at, created_at) AS article_date,
             ROUND(
                 (
-                    (recommendation_count * 5.0 + LN(view_count + 1) * 2.0 + comment_count * 1.0)
+                    (recommendation_count * 1.0 + LN(view_count + 1) * 2.0 + comment_count * 1.0 + CASE WHEN COALESCE(published_at, created_at) >= NOW() - INTERVAL '14 days' THEN 50.0 ELSE 0.0 END)
                     * POWER(0.5, GREATEST(0.0, EXTRACT(EPOCH FROM (NOW() - COALESCE(published_at, created_at))) / 86400.0) / :half_life_days)
                 )::numeric, 2
             ) AS recency_score,
@@ -365,8 +377,12 @@ buff_sequence, deal_cycle 및 core_v_matrix 작성 시 반드시 아래 목록�
 
                 val_res = validate_guide_skills(parsed, job_name)
                 parsed["metadata"]["skill_validation"] = val_res
-                print(f"  [SKILL-VALIDATION] Valid: {val_res['valid']} | Match: {val_res['matched_count']} / {val_res['matched_count'] + val_res['unknown_count']} ({val_res['match_ratio']*100:.1f}%)")
-                if val_res['unknown_skills']:
+                matched_cnt = len(val_res.get('matched_skills', []))
+                unknown_cnt = len(val_res.get('unknown_skills', []))
+                total_cnt = matched_cnt + unknown_cnt
+                ratio = val_res.get('match_ratio', 0.0) * 100
+                print(f"  [SKILL-VALIDATION] Valid: {val_res['valid']} | Match: {matched_cnt} / {total_cnt} ({ratio:.1f}%)")
+                if val_res.get('unknown_skills'):
                     print(f"  [SKILL-VALIDATION] Unknown detected: {val_res['unknown_skills']}")
                 return parsed
             else:
@@ -720,7 +736,7 @@ def print_guide_comparison(job_name: str, old_guide: dict[str, Any], new_guide: 
 async def process_all_jobs(
     target_jobs: list[str] | None = None,
     delay: float = 2.0,
-    half_life_days: float = 45.0,
+    half_life_days: float = 7.0,
     auto_commit: bool = False,
     force: bool = False,
     provider: str = "local",
@@ -867,7 +883,7 @@ def main():
     parser.add_argument("--all", action="store_true", help="Process all 48 jobs")
     parser.add_argument("--force", action="store_true", help="Force regenerate existing guides")
     parser.add_argument("--auto-commit", action="store_true", default=False, help="Automatically run tests, sync, and git commit upon success")
-    parser.add_argument("--half-life-days", type=float, default=45.0, help="Recency decay half-life in days (default: 45.0)")
+    parser.add_argument("--half-life-days", type=float, default=7.0, help="Recency decay half-life in days (default: 7.0)")
     parser.add_argument("--delay", type=float, default=2.0, help="Delay between API calls in seconds (default: 2.0)")
     parser.add_argument("--provider", choices=["local", "gemini"], default="local", help="LLM provider: 'local' (vLLM local-coder) or 'gemini' (default: local)")
     parser.add_argument("--endpoint", default="http://127.0.0.1:8001/v1", help="Local LLM API endpoint (default: http://127.0.0.1:8001/v1)")
