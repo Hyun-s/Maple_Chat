@@ -59,6 +59,15 @@ class AnswerGenerator(Protocol):
     ) -> str | GenerationResult: ...
 
 
+SUMMARY_FIRST_STYLE = (
+    "답변 맨 앞에 핵심 내용을 처음 읽는 사람도 이해하기 쉬운 1~3문장으로 요약한다. "
+    "요약 뒤에는 빈 줄을 두고 기존 상세 본문과 근거·출처·주의사항을 그대로 유지하며, "
+    "요약을 이유로 기존 본문을 줄이거나 생략하지 않는다. "
+    "기존 분량·첫 문단·문단 길이 규칙은 요약 뒤 본문에 적용한다. "
+    "요약에도 본문과 동일한 근거·불확실성 기준을 적용하고 새로운 사실은 추가하지 않는다. "
+)
+
+
 _RESPONSE_STYLE = (
     "답변은 12문장 이내로 작성한다. 질문의 무게와 길이에 답변 분량을 맞춘다. "
     "첫 문단은 질문에 대한 직접 답변 1~2문장으로 시작하고, 인사나 질문 복창, 장식적인 미사여구 없이 "
@@ -231,7 +240,7 @@ def build_grounded_messages(
         "성공 기록에 섞지 않는다. 절대 환산 스탯(예: 6.8)과 퍼센트로 표시된 보스 배율·스카우터 "
         "배율(예: 102%)은 서로 다른 지표이므로 같은 단위처럼 비교·평균하지 않고, 퍼센트 수치를 "
         "'환산 102%'라고 부르지 않는다. "
-        f"{_RESPONSE_STYLE}"
+        f"{_RESPONSE_STYLE} {SUMMARY_FIRST_STYLE}"
     )
     user = (
         f"질문:\n{query}\n\n<canonical_knowledge_json>\n{canonical_context}\n"
@@ -246,7 +255,7 @@ def build_direct_messages(query: str) -> tuple[ChatMessage, ...]:
         "당신은 한국어 도우미다. 이 요청은 사용자가 선택한 검색 증강 없이 답한다. "
         "게시판 검색 결과나 실시간 정보가 제공되지 않았으므로, 최신성이나 정확성이 불확실한 "
         "내용은 추측으로 단정하지 말고 불확실성을 명시한다. 의미가 확실하지 않은 약어·짧은 "
-        f"용어에 괄호로 추측한 풀이를 붙이지 않는다. {_RESPONSE_STYLE}"
+        f"용어에 괄호로 추측한 풀이를 붙이지 않는다. {_RESPONSE_STYLE} {SUMMARY_FIRST_STYLE}"
     )
     return (ChatMessage("system", system), ChatMessage("user", query))
 

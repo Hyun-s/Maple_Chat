@@ -120,6 +120,22 @@ def test_direct_messages_explicitly_disclose_that_retrieval_is_disabled() -> Non
     assert messages[1].content == "일반 질문"
 
 
+def test_answer_prompts_add_short_summary_without_replacing_existing_body() -> None:
+    prompts = (
+        build_grounded_messages("카링 공략", evidence())[0].content,
+        build_direct_messages("일반 질문")[0].content,
+    )
+    for prompt in prompts:
+        assert "답변 맨 앞에" in prompt
+        assert "이해하기 쉬운 1~3문장" in prompt
+        assert "요약 뒤에는 빈 줄" in prompt
+        assert "기존 상세 본문" in prompt
+        assert "줄이거나 생략하지 않는다" in prompt
+        assert "요약 뒤 본문에 적용한다" in prompt
+        assert "12문장 이내" in prompt
+        assert "불확실" in prompt
+
+
 def test_retrieval_fallback_is_labeled_and_bounded() -> None:
     value = retrieval_fallback(evidence())
     assert "검색 결과만" in value

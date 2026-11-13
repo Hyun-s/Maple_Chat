@@ -73,6 +73,7 @@ async def test_agent_chooses_tool_evaluates_result_and_finishes() -> None:
     assert "공식 조회 레벨은 290" in result.text
     assert result.text.endswith("Data based on NEXON Open API")
     assert "official_value" in generator.calls[1][-1].content
+    assert result.error_code is None
 
 
 @pytest.mark.asyncio
@@ -87,7 +88,9 @@ async def test_agent_rejects_invalid_decisions_after_bounded_correction() -> Non
 
     assert len(generator.calls) == 2
     assert result.steps == ()
-    assert "안전한 실행 계획" in result.text
+    assert "응답 형식" in result.text
+    assert "캐릭터명" not in result.text
+    assert result.error_code == "invalid_decision"
 
 
 @pytest.mark.asyncio
@@ -111,6 +114,7 @@ async def test_agent_blocks_identical_tool_call_and_enforces_call_limit() -> Non
     assert len(result.steps) == 2
     assert "반복할 수 없습니다" in str(result.steps[1].result)
     assert len(generator.calls) == 3
+    assert result.error_code is None
 
 
 def test_agent_rejects_invalid_tool_call_limits() -> None:
@@ -166,14 +170,24 @@ async def test_agent_attribution_matches_local_tool_provenance() -> None:
 
 
 @pytest.mark.asyncio
-async def test_agent_returns_safe_fallback_when_forced_finish_is_invalid() -> None:
+@pytest.mark.parametrize(
+    "final_response",
+    [
+        "not-json",
+        '{"action":"finish"}',
+        '{"action":"tool","tool":"lookup","arguments":{"value":"x"}}',
+    ],
+)
+async def test_agent_returns_safe_fallback_when_forced_finish_is_invalid(
+    final_response: str,
+) -> None:
     async def handler(value: BaseModel) -> dict[str, Any]:
         return {"value": _Args.model_validate(value).value}
 
     generator = _SequenceGenerator(
         (
             '{"action":"tool","tool":"lookup","arguments":{"value":"x"}}',
-            "not-json",
+            final_response,
         )
     )
     service = NexonAgentService(generator, _registry(handler), max_tool_calls=1)
@@ -181,6 +195,10 @@ async def test_agent_returns_safe_fallback_when_forced_finish_is_invalid() -> No
     result = await service.run("질문")
 
     assert "안전한 형식으로 생성하지 못했습니다" in result.text
+    assert "캐릭터명" not in result.text
+    assert result.error_code == "invalid_final_answer"
+    assert len(result.steps) == 1
+    assert len(generator.calls) == 2
 
 
 @pytest.mark.asyncio
@@ -237,6 +255,50 @@ async def test_agent_reconstructs_prior_steps_without_repeating_tool() -> None:
     assert executions == 0
     assert len(result.steps) == 1
     assert "official_value" in generator.calls[0][-1].content
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("max_tool_calls", [1, 4])
+async def test_agent_requests_summary_only_inside_final_answer_and_preserves_body(
+    max_tool_calls: int,
+) -> None:
+    from maple_chat.agent.service import AgentPlan
+
+    async def handler(_: BaseModel) -> dict[str, Any]:
+        return {"evidence": "검증된 상세 근거"}
+
+    generator = _SequenceGenerator(
+        (
+            '{"action":"tool","tool":"lookup","arguments":{"value":"x"}}',
+            '{"action":"finish","answer":"쉬운 핵심 요약.\\n\\n기존 상세 본문과 근거."}',
+        )
+    )
+    service = NexonAgentService(generator, _registry(handler), max_tool_calls=max_tool_calls)
+    result = await service.run(
+        "공략 알려줘",
+        plan=AgentPlan(goal="공략 설명", steps=["검색", "답변"]),
+    )
+
+    prompt = generator.calls[0][0].content
+    assert "이해하기 쉬운 1~3문장" in prompt
+    assert "기존 상세 본문" in prompt
+    assert "줄이거나 생략하지 않는다" in prompt
+    assert "finish JSON의 answer 문자열 안에만" in prompt
+    assert "JSON 밖에 요약을 출력하지 않는다" in prompt
+    assert '"action":"tool"' in prompt
+    assert '"action":"finish"' in prompt
+    assert len(generator.calls) == 2
+    assert result.text.startswith("쉬운 핵심 요약.\n\n기존 상세 본문과 근거.")
+    assert result.error_code is None
+
+
+@pytest.mark.asyncio
+async def test_agent_plan_does_not_request_answer_summary() -> None:
+    generator = _SequenceGenerator(('{"goal":"공략 설명","steps":["검색","답변"]}',))
+    service = NexonAgentService(generator, ToolRegistry(()))
+    await service.plan("공략 알려줘")
+    assert "1~3문장" not in generator.calls[0][0].content
+    assert "JSON 하나만 반환" in generator.calls[0][0].content
 
 
 def test_agent_system_prompt_includes_gameplay_mechanics_fallback() -> None:

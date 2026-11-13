@@ -67,6 +67,7 @@ class GenerationMetrics:
 class GenerationResult:
     text: str
     metrics: GenerationMetrics
+    finish_reason: str | None = None
 
 
 class LocalLLMClient:
@@ -141,6 +142,7 @@ class LocalLLMClient:
                 first_content_at: float | None = None
                 content_parts: list[str] = []
                 usage: dict[str, Any] | None = None
+                finish_reason: str | None = None
                 async with self._client.stream("POST", "chat/completions", json=body) as response:
                     if response.status_code >= 500:
                         raise httpx.HTTPStatusError(
@@ -163,6 +165,21 @@ class LocalLLMClient:
                         choices = payload.get("choices")
                         if not isinstance(choices, list) or not choices:
                             continue
+                        reason = choices[0].get("finish_reason")
+                        if reason is not None:
+                            finish_reason = (
+                                reason
+                                if isinstance(reason, str)
+                                and reason
+                                in {
+                                    "stop",
+                                    "length",
+                                    "tool_calls",
+                                    "content_filter",
+                                    "function_call",
+                                }
+                                else "unknown"
+                            )
                         delta = choices[0].get("delta", {})
                         content = delta.get("content")
                         if isinstance(content, str) and content:
@@ -184,6 +201,7 @@ class LocalLLMClient:
                     raise ValueError("local generation did not stream assistant content")
                 return GenerationResult(
                     text=text,
+                    finish_reason=finish_reason,
                     metrics=GenerationMetrics(
                         prompt_tokens=prompt_tokens,
                         completion_tokens=completion_tokens,

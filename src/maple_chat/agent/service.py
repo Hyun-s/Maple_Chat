@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import time
 import uuid
 from collections.abc import Awaitable, Callable
@@ -26,6 +27,7 @@ from maple_chat.agent.tools import ToolRegistry
 from maple_chat.db.models import Answer, AnswerMode
 from maple_chat.llm.client import ChatMessage, GenerationMetrics, GenerationResult, LLMUnavailable
 from maple_chat.qa.service import (
+    SUMMARY_FIRST_STYLE,
     AnswerOutcome,
     QuestionRequest,
     build_processing_metrics,
@@ -33,6 +35,8 @@ from maple_chat.qa.service import (
     unpack_generation,
 )
 from maple_chat.time import utc_now
+
+logger = logging.getLogger(__name__)
 
 _NEXON_API_TOOLS = frozenset(
     {
@@ -115,6 +119,7 @@ class AgentRunResult:
     text: str
     steps: tuple[AgentStep, ...]
     metrics: tuple[GenerationMetrics, ...]
+    error_code: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -142,7 +147,9 @@ class NexonAgentService:
         self.max_tool_calls = max_tool_calls
         self.source_ttl = source_ttl
 
-    async def plan(self, query: str, *, context_prompt: str = "") -> AgentPlanResult:
+    async def plan(
+        self, query: str, *, context_prompt: str = "", run_id: str | None = None
+    ) -> AgentPlanResult:
         system_content = (
             "당신은 메이플스토리 Agent 계획기다. 사용자의 목표를 1~6개의 검증 가능한 "
             "단계로 분해한다. 툴을 아직 실행하거나 사실을 만들지 않는다. 설명 없이 "
@@ -159,14 +166,18 @@ class NexonAgentService:
         )
         metrics: list[GenerationMetrics] = []
         current: tuple[ChatMessage, ...] = messages
-        for _ in range(2):
+        for attempt in range(1, 3):
             generated = await self.generator.generate(current, max_tokens=512)
             raw, generation_metrics = unpack_generation(generated)
             if generation_metrics is not None:
                 metrics.append(generation_metrics)
             try:
                 return AgentPlanResult(_parse_plan(raw), tuple(metrics))
-            except (ValueError, ValidationError):
+            except (ValueError, ValidationError) as exc:
+                _log_parse_failure(
+                    generated, raw, exc, phase="plan", attempt=attempt,
+                    max_tokens=512, completed_tool_calls=0, run_id=run_id,
+                )
                 current = (
                     *messages,
                     ChatMessage("assistant", raw),
@@ -239,6 +250,7 @@ class NexonAgentService:
         prior_steps: tuple[AgentStep, ...] = (),
         on_step: StepCallback | None = None,
         context_prompt: str = "",
+        run_id: str | None = None,
     ) -> AgentRunResult:
         catalog = json.dumps(self.tools.prompt_catalog(), ensure_ascii=False, separators=(",", ":"))
         system_content = _agent_system_prompt(catalog, self.max_tool_calls, plan=plan)
@@ -273,14 +285,19 @@ class NexonAgentService:
                 metrics.append(generation_metrics)
             try:
                 decision = _parse_decision(raw)
-            except (ValueError, ValidationError):
+            except (ValueError, ValidationError) as exc:
                 invalid_decisions += 1
+                _log_parse_failure(
+                    generated, raw, exc, phase="decision", attempt=invalid_decisions,
+                    max_tokens=768, completed_tool_calls=len(steps), run_id=run_id,
+                )
                 if invalid_decisions >= 2:
                     return AgentRunResult(
-                        "Agent가 안전한 실행 계획을 만들지 못했습니다. "
-                        "질문에 캐릭터명을 명시해 주세요.",
+                        "AI 응답 형식을 검증하지 못해 답변을 완료하지 못했습니다. "
+                        "다시 시도해 주세요.",
                         tuple(steps),
                         tuple(metrics),
+                        error_code="invalid_decision",
                     )
                 messages.extend(
                     (
@@ -340,12 +357,19 @@ class NexonAgentService:
             metrics.append(generation_metrics)
         try:
             final_decision: AgentDecision | None = _parse_decision(raw)
-        except (ValueError, ValidationError):
+        except (ValueError, ValidationError) as exc:
+            _log_parse_failure(
+                generated, raw, exc, phase="final", attempt=1,
+                max_tokens=1024, completed_tool_calls=len(steps), run_id=run_id,
+            )
             final_decision = None
         if final_decision is None or final_decision.action is not ActionKind.FINISH:
             text = "조회는 완료했지만 답변을 안전한 형식으로 생성하지 못했습니다."
-        else:
-            text = final_decision.answer or ""
+            return AgentRunResult(
+                _with_attribution(text, tuple(steps)), tuple(steps), tuple(metrics),
+                error_code="invalid_final_answer",
+            )
+        text = final_decision.answer or ""
         return AgentRunResult(_with_attribution(text, tuple(steps)), tuple(steps), tuple(metrics))
 
 
@@ -413,13 +437,19 @@ class DurableAgentService:
                 prior_steps=_stored_steps(stored.calls),
                 on_step=checkpoint,
                 context_prompt=context_prompt,
+                run_id=stored.run_id,
             )
             generation_metrics.extend(run.metrics)
             text = f"{run.text.rstrip()}\n\nAgent 실행 ID: `{stored.run_id}`"
+            if run.error_code is not None:
+                await self.store.fail(
+                    stored.run_id, error_code=run.error_code, now=utc_now()
+                )
+                text += f"\n\n재개: `--agent-resume {stored.run_id}`"
             answer_id = await self.store.finish(
                 stored.run_id,
                 request,
-                succeeded=True,
+                succeeded=run.error_code is None,
                 now=utc_now(),
             )
         except (LLMUnavailable, AgentPlanningError) as exc:
@@ -449,7 +479,9 @@ class DurableAgentService:
     async def _load_or_plan(self, stored: StoredAgentRun, *, context_prompt: str = "") -> _StoredPlanResult:
         if stored.plan:
             return _StoredPlanResult(AgentPlan.model_validate(stored.plan), (), stored)
-        generated = await self.engine.plan(stored.query, context_prompt=context_prompt)
+        generated = await self.engine.plan(
+            stored.query, context_prompt=context_prompt, run_id=stored.run_id
+        )
         updated = await self.store.save_plan(
             stored.run_id,
             generated.plan.model_dump(mode="json"),
@@ -501,6 +533,9 @@ def _agent_system_prompt(
         "하나만 반환한다: "
         '{"action":"tool","tool":"도구명","arguments":{...}} 또는 '
         '{"action":"finish","answer":"최종 답변"}. '
+        f"{SUMMARY_FIRST_STYLE}"
+        "요약과 기존 본문은 finish JSON의 answer 문자열 안에만 포함한다. "
+        "tool 호출 및 계획 JSON은 기존 형식을 유지하며 JSON 밖에 요약을 출력하지 않는다. "
         f"사용 가능한 툴: {catalog}. 승인되지 않은 상태 변경 툴은 선택하지 않는다. "
         f"현재 작업 계획: {plan_context}"
     )
@@ -531,6 +566,59 @@ def _append_observation(
             ),
         )
     )
+
+
+def _log_parse_failure(
+    generated: str | GenerationResult,
+    raw: str,
+    error: ValueError,
+    *,
+    phase: str,
+    attempt: int,
+    max_tokens: int,
+    completed_tool_calls: int,
+    run_id: str | None = None,
+) -> None:
+    """Log structural diagnostics only; never serialize model text or error inputs."""
+    context: dict[str, Any] = {
+        "run_id": run_id,
+        "phase": phase,
+        "attempt": attempt,
+        "completed_tool_calls": completed_tool_calls,
+        "response_chars": len(raw),
+        "has_object_start": "{" in raw,
+        "has_object_end": "}" in raw,
+        "code_fenced": raw.lstrip().startswith("```"),
+        "max_tokens": max_tokens,
+        "finish_reason": None,
+        "completion_tokens": None,
+    }
+    if isinstance(error, json.JSONDecodeError):
+        context.update(
+            error_category="json_syntax",
+            json_error_position=error.pos,
+            json_error_line=error.lineno,
+            json_error_column=error.colno,
+        )
+    elif isinstance(error, ValidationError):
+        errors = error.errors(include_input=False, include_context=False, include_url=False)
+        context.update(
+            error_category="schema_validation",
+            validation_error_count=len(errors),
+            validation_error_types=sorted({item["type"] for item in errors})[:10],
+        )
+    else:
+        context["error_category"] = "missing_json_object"
+    if isinstance(generated, GenerationResult):
+        reason = generated.finish_reason
+        context["finish_reason"] = (
+            reason
+            if reason is None
+            or reason in {"stop", "length", "tool_calls", "content_filter", "function_call"}
+            else "unknown"
+        )
+        context["completion_tokens"] = generated.metrics.completion_tokens
+    logger.warning("agent_generation_parse_failed", extra={"context": context})
 
 
 def _parse_decision(value: str) -> AgentDecision:

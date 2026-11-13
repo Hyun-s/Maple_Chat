@@ -58,6 +58,38 @@ async def test_local_readiness_and_generation_contract() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("finish_reason", ["length", "stop", None, "private-canary"])
+async def test_generation_preserves_safe_finish_reason(finish_reason: str | None) -> None:
+    def handler(_: httpx.Request) -> httpx.Response:
+        chunks = (
+            {"choices": [{"delta": {"content": "answer"}}]},
+            {"choices": [{"delta": {}, "finish_reason": finish_reason}]},
+            {
+                "choices": [],
+                "usage": {"prompt_tokens": 12, "completion_tokens": 5, "total_tokens": 17},
+            },
+        )
+        stream = "\n\n".join("data: " + json.dumps(chunk) for chunk in chunks)
+        return httpx.Response(
+            200,
+            content=stream + "\n\ndata: [DONE]\n\n",
+            headers={"content-type": "text/event-stream"},
+        )
+
+    async with LocalLLMClient(
+        base_url="http://localhost:8100/v1",
+        model="local-coder",
+        retries=0,
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        result = await client.generate((ChatMessage("user", "question"),))
+
+    expected = finish_reason if finish_reason in {"length", "stop", None} else "unknown"
+    assert result.finish_reason == expected
+    assert result.text == "answer"
+
+
+@pytest.mark.asyncio
 async def test_generation_fails_closed_when_stream_usage_is_missing() -> None:
     def handler(_: httpx.Request) -> httpx.Response:
         return httpx.Response(
