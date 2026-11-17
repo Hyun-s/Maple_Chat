@@ -54,10 +54,10 @@ export EMBEDDING_PROVIDER="$embedding_provider"
 
 vllm_was_running="false"
 if docker ps --format '{{.Names}}' | grep -qx "vllm-local-coder"; then
-  echo "vLLM (qwen38-flash-next) is running; pausing it to yield GPU memory to TEI..."
+  echo "Local model is running; pausing it to yield GPU memory to TEI..."
   vllm_was_running="true"
   if [[ -x "$gpu_manager" ]]; then
-    "$gpu_manager" down qwen38-flash-next >/dev/null 2>&1 || docker stop vllm-local-coder >/dev/null 2>&1 || true
+    "$gpu_manager" down mia-qwen >/dev/null 2>&1 || docker stop vllm-local-coder >/dev/null 2>&1 || true
   else
     docker stop vllm-local-coder >/dev/null 2>&1 || true
   fi
@@ -68,9 +68,9 @@ fi
 
 restore_vllm() {
   if [[ "$vllm_was_running" == "true" ]]; then
-    echo "Indexing finished; restoring vLLM (qwen38-flash-next)..."
+    echo "Indexing finished; restoring local model (mia-qwen)..."
     if [[ -x "$gpu_manager" ]]; then
-      "$gpu_manager" up qwen38-flash-next >/dev/null 2>&1 || true
+      "$gpu_manager" up mia-qwen >/dev/null 2>&1 || true
     fi
   fi
 }
