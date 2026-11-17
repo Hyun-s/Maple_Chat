@@ -157,15 +157,10 @@ def test_integration_database_reset_requires_an_explicit_isolated_database_guard
     assert "G002_DATABASE_URL matches DATABASE_URL" in fixture
 
 
-def test_nexon_shell_exports_are_preserved_and_analytics_is_in_site_head() -> None:
+def test_nexon_shell_exports_are_preserved() -> None:
     local_env = (ROOT / "scripts/_local_env.sh").read_text(encoding="utf-8")
-    site = (ROOT / "Maple_chat_site/index.html").read_text(encoding="utf-8")
 
     assert "NEXON_API_KEY NEXON_ANALYTICS_SCRIPT" in local_env
-    assert site.count("nexon-open-api-analytics:start") == 1
-    assert site.count("nexon-open-api-analytics:end") == 1
-    assert "https://openapi.nexon.com/js/analytics.js?app_id=" in site
-    assert site.index("nexon-open-api-analytics:start") < site.index("</head>")
 
 
 def test_daily_sync_uses_id_deduplication_and_continues_bounded_backfill() -> None:

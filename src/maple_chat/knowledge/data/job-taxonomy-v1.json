@@ -1,0 +1,718 @@
+{
+  "schema_version": 1,
+  "source": {
+    "source_id": "nexon-maplestory-job-guide",
+    "title": "메이플스토리 공식 직업소개",
+    "url": "https://maplestory.nexon.com/Guide/N23Job",
+    "publisher": "NEXON Korea",
+    "version": "2026-08-25",
+    "checked_at": "2026-08-24T15:00:00+00:00"
+  },
+  "allowed_ambiguous_aliases": [],
+  "external_entity_ids": [],
+  "entities": [
+    {
+      "entity_id": "job-family:archer",
+      "entity_type": "job_family",
+      "canonical_name": "궁수",
+      "description": "궁수 전투 계열",
+      "aliases": []
+    },
+    {
+      "entity_id": "job-family:mage",
+      "entity_type": "job_family",
+      "canonical_name": "마법사",
+      "description": "마법사 전투 계열",
+      "aliases": []
+    },
+    {
+      "entity_id": "job-family:pirate",
+      "entity_type": "job_family",
+      "canonical_name": "해적",
+      "description": "해적 전투 계열",
+      "aliases": []
+    },
+    {
+      "entity_id": "job-family:thief",
+      "entity_type": "job_family",
+      "canonical_name": "도적",
+      "description": "도적 전투 계열",
+      "aliases": []
+    },
+    {
+      "entity_id": "job-family:warrior",
+      "entity_type": "job_family",
+      "canonical_name": "전사",
+      "description": "전사 전투 계열",
+      "aliases": []
+    },
+    {
+      "entity_id": "taxonomy:maplestory-jobs",
+      "entity_type": "taxonomy",
+      "canonical_name": "메이플스토리 직업 체계",
+      "description": "전사·마법사·궁수·도적·해적 계열과 개별 직업의 공식 분류 체계",
+      "aliases": [
+        "직업군",
+        "직업군별",
+        "직업 계층",
+        "직업 체계",
+        "전체 직업군"
+      ]
+    },
+    {
+      "entity_id": "job:hero",
+      "entity_type": "job",
+      "canonical_name": "히어로",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:paladin",
+      "entity_type": "job",
+      "canonical_name": "팔라딘",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:dark-knight",
+      "entity_type": "job",
+      "canonical_name": "다크나이트",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:soul-master",
+      "entity_type": "job",
+      "canonical_name": "소울마스터",
+      "description": null,
+      "aliases": [
+        "소마"
+      ]
+    },
+    {
+      "entity_id": "job:mihile",
+      "entity_type": "job",
+      "canonical_name": "미하일",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:blaster",
+      "entity_type": "job",
+      "canonical_name": "블래스터",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:demon-slayer",
+      "entity_type": "job",
+      "canonical_name": "데몬 슬레이어",
+      "description": null,
+      "aliases": [
+        "데슬",
+        "데몬슬레이어"
+      ]
+    },
+    {
+      "entity_id": "job:demon-avenger",
+      "entity_type": "job",
+      "canonical_name": "데몬 어벤져",
+      "description": null,
+      "aliases": [
+        "데벤",
+        "데벤져",
+        "데몬어벤져"
+      ]
+    },
+    {
+      "entity_id": "job:aran",
+      "entity_type": "job",
+      "canonical_name": "아란",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:kaiser",
+      "entity_type": "job",
+      "canonical_name": "카이저",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:adele",
+      "entity_type": "job",
+      "canonical_name": "아델",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:len",
+      "entity_type": "job",
+      "canonical_name": "렌",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:zero",
+      "entity_type": "job",
+      "canonical_name": "제로",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:arch-mage-fire-poison",
+      "entity_type": "job",
+      "canonical_name": "아크메이지(불,독)",
+      "description": null,
+      "aliases": [
+        "불독",
+        "불,독"
+      ]
+    },
+    {
+      "entity_id": "job:arch-mage-ice-lightning",
+      "entity_type": "job",
+      "canonical_name": "아크메이지(썬,콜)",
+      "description": null,
+      "aliases": [
+        "썬콜",
+        "썬,콜"
+      ]
+    },
+    {
+      "entity_id": "job:bishop",
+      "entity_type": "job",
+      "canonical_name": "비숍",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:flame-wizard",
+      "entity_type": "job",
+      "canonical_name": "플레임위자드",
+      "description": null,
+      "aliases": [
+        "플위"
+      ]
+    },
+    {
+      "entity_id": "job:battle-mage",
+      "entity_type": "job",
+      "canonical_name": "배틀메이지",
+      "description": null,
+      "aliases": [
+        "배메"
+      ]
+    },
+    {
+      "entity_id": "job:evan",
+      "entity_type": "job",
+      "canonical_name": "에반",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:luminous",
+      "entity_type": "job",
+      "canonical_name": "루미너스",
+      "description": null,
+      "aliases": [
+        "루미"
+      ]
+    },
+    {
+      "entity_id": "job:illium",
+      "entity_type": "job",
+      "canonical_name": "일리움",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:lara",
+      "entity_type": "job",
+      "canonical_name": "라라",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:kinesis",
+      "entity_type": "job",
+      "canonical_name": "키네시스",
+      "description": null,
+      "aliases": [
+        "키네"
+      ]
+    },
+    {
+      "entity_id": "job:lethe",
+      "entity_type": "job",
+      "canonical_name": "레테",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:bow-master",
+      "entity_type": "job",
+      "canonical_name": "보우마스터",
+      "description": null,
+      "aliases": [
+        "보마"
+      ]
+    },
+    {
+      "entity_id": "job:marksman",
+      "entity_type": "job",
+      "canonical_name": "신궁",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:pathfinder",
+      "entity_type": "job",
+      "canonical_name": "패스파인더",
+      "description": null,
+      "aliases": [
+        "패파"
+      ]
+    },
+    {
+      "entity_id": "job:wind-breaker",
+      "entity_type": "job",
+      "canonical_name": "윈드브레이커",
+      "description": null,
+      "aliases": [
+        "윈브"
+      ]
+    },
+    {
+      "entity_id": "job:wild-hunter",
+      "entity_type": "job",
+      "canonical_name": "와일드헌터",
+      "description": null,
+      "aliases": [
+        "와헌"
+      ]
+    },
+    {
+      "entity_id": "job:mercedes",
+      "entity_type": "job",
+      "canonical_name": "메르세데스",
+      "description": null,
+      "aliases": [
+        "메르"
+      ]
+    },
+    {
+      "entity_id": "job:kain",
+      "entity_type": "job",
+      "canonical_name": "카인",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:night-lord",
+      "entity_type": "job",
+      "canonical_name": "나이트로드",
+      "description": null,
+      "aliases": [
+        "나로"
+      ]
+    },
+    {
+      "entity_id": "job:shadower",
+      "entity_type": "job",
+      "canonical_name": "섀도어",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:dual-blade",
+      "entity_type": "job",
+      "canonical_name": "듀얼블레이드",
+      "description": null,
+      "aliases": [
+        "듀블"
+      ]
+    },
+    {
+      "entity_id": "job:night-walker",
+      "entity_type": "job",
+      "canonical_name": "나이트워커",
+      "description": null,
+      "aliases": [
+        "나워"
+      ]
+    },
+    {
+      "entity_id": "job:phantom",
+      "entity_type": "job",
+      "canonical_name": "팬텀",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:cadena",
+      "entity_type": "job",
+      "canonical_name": "카데나",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:khali",
+      "entity_type": "job",
+      "canonical_name": "칼리",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:hoyoung",
+      "entity_type": "job",
+      "canonical_name": "호영",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:xenon",
+      "entity_type": "job",
+      "canonical_name": "제논",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:buccaneer",
+      "entity_type": "job",
+      "canonical_name": "바이퍼",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:corsair",
+      "entity_type": "job",
+      "canonical_name": "캡틴",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:cannon-shooter",
+      "entity_type": "job",
+      "canonical_name": "캐논슈터",
+      "description": null,
+      "aliases": [
+        "캐슈"
+      ]
+    },
+    {
+      "entity_id": "job:thunder-breaker",
+      "entity_type": "job",
+      "canonical_name": "스트라이커",
+      "description": null,
+      "aliases": [
+        "스커"
+      ]
+    },
+    {
+      "entity_id": "job:mechanic",
+      "entity_type": "job",
+      "canonical_name": "메카닉",
+      "description": null,
+      "aliases": [
+        "메카"
+      ]
+    },
+    {
+      "entity_id": "job:shade",
+      "entity_type": "job",
+      "canonical_name": "은월",
+      "description": null,
+      "aliases": []
+    },
+    {
+      "entity_id": "job:angelic-buster",
+      "entity_type": "job",
+      "canonical_name": "엔젤릭버스터",
+      "description": null,
+      "aliases": [
+        "엔버"
+      ]
+    },
+    {
+      "entity_id": "job:ark",
+      "entity_type": "job",
+      "canonical_name": "아크",
+      "description": null,
+      "aliases": []
+    }
+  ],
+  "relations": [
+    {
+      "subject_entity_id": "job-family:archer",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:maplestory-jobs"
+    },
+    {
+      "subject_entity_id": "job-family:mage",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:maplestory-jobs"
+    },
+    {
+      "subject_entity_id": "job-family:pirate",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:maplestory-jobs"
+    },
+    {
+      "subject_entity_id": "job-family:thief",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:maplestory-jobs"
+    },
+    {
+      "subject_entity_id": "job-family:warrior",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:maplestory-jobs"
+    },
+    {
+      "subject_entity_id": "job:hero",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:warrior"
+    },
+    {
+      "subject_entity_id": "job:paladin",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:warrior"
+    },
+    {
+      "subject_entity_id": "job:dark-knight",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:warrior"
+    },
+    {
+      "subject_entity_id": "job:soul-master",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:warrior"
+    },
+    {
+      "subject_entity_id": "job:mihile",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:warrior"
+    },
+    {
+      "subject_entity_id": "job:blaster",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:warrior"
+    },
+    {
+      "subject_entity_id": "job:demon-slayer",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:warrior"
+    },
+    {
+      "subject_entity_id": "job:demon-avenger",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:warrior"
+    },
+    {
+      "subject_entity_id": "job:aran",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:warrior"
+    },
+    {
+      "subject_entity_id": "job:kaiser",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:warrior"
+    },
+    {
+      "subject_entity_id": "job:adele",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:warrior"
+    },
+    {
+      "subject_entity_id": "job:len",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:warrior"
+    },
+    {
+      "subject_entity_id": "job:zero",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:warrior"
+    },
+    {
+      "subject_entity_id": "job:arch-mage-fire-poison",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:mage"
+    },
+    {
+      "subject_entity_id": "job:arch-mage-ice-lightning",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:mage"
+    },
+    {
+      "subject_entity_id": "job:bishop",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:mage"
+    },
+    {
+      "subject_entity_id": "job:flame-wizard",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:mage"
+    },
+    {
+      "subject_entity_id": "job:battle-mage",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:mage"
+    },
+    {
+      "subject_entity_id": "job:evan",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:mage"
+    },
+    {
+      "subject_entity_id": "job:luminous",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:mage"
+    },
+    {
+      "subject_entity_id": "job:illium",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:mage"
+    },
+    {
+      "subject_entity_id": "job:lara",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:mage"
+    },
+    {
+      "subject_entity_id": "job:kinesis",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:mage"
+    },
+    {
+      "subject_entity_id": "job:lethe",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:mage"
+    },
+    {
+      "subject_entity_id": "job:bow-master",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:archer"
+    },
+    {
+      "subject_entity_id": "job:marksman",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:archer"
+    },
+    {
+      "subject_entity_id": "job:pathfinder",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:archer"
+    },
+    {
+      "subject_entity_id": "job:wind-breaker",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:archer"
+    },
+    {
+      "subject_entity_id": "job:wild-hunter",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:archer"
+    },
+    {
+      "subject_entity_id": "job:mercedes",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:archer"
+    },
+    {
+      "subject_entity_id": "job:kain",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:archer"
+    },
+    {
+      "subject_entity_id": "job:night-lord",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:thief"
+    },
+    {
+      "subject_entity_id": "job:shadower",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:thief"
+    },
+    {
+      "subject_entity_id": "job:dual-blade",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:thief"
+    },
+    {
+      "subject_entity_id": "job:night-walker",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:thief"
+    },
+    {
+      "subject_entity_id": "job:phantom",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:thief"
+    },
+    {
+      "subject_entity_id": "job:cadena",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:thief"
+    },
+    {
+      "subject_entity_id": "job:khali",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:thief"
+    },
+    {
+      "subject_entity_id": "job:hoyoung",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:thief"
+    },
+    {
+      "subject_entity_id": "job:xenon",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:thief"
+    },
+    {
+      "subject_entity_id": "job:xenon",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:pirate"
+    },
+    {
+      "subject_entity_id": "job:buccaneer",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:pirate"
+    },
+    {
+      "subject_entity_id": "job:corsair",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:pirate"
+    },
+    {
+      "subject_entity_id": "job:cannon-shooter",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:pirate"
+    },
+    {
+      "subject_entity_id": "job:thunder-breaker",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:pirate"
+    },
+    {
+      "subject_entity_id": "job:mechanic",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:pirate"
+    },
+    {
+      "subject_entity_id": "job:shade",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:pirate"
+    },
+    {
+      "subject_entity_id": "job:angelic-buster",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:pirate"
+    },
+    {
+      "subject_entity_id": "job:ark",
+      "predicate": "is_a",
+      "object_entity_id": "job-family:pirate"
+    }
+  ]
+}

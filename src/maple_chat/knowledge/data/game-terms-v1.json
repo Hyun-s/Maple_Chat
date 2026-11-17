@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "source": {
+    "source_id": "nexon-maplestory-game-terms",
+    "title": "메이플스토리 공식 게임 용어",
+    "url": "https://gi.maplestory.nexon.com/Guide/GameInformation/Terms/Terms",
+    "publisher": "NEXON Korea",
+    "version": "2026-08-25-v1",
+    "checked_at": "2026-08-24T15:00:00+00:00"
+  },
+  "allowed_ambiguous_aliases": [],
+  "external_entity_ids": [],
+  "entities": [
+    {
+      "entity_id": "abbreviation:additional-option",
+      "entity_type": "abbreviation",
+      "canonical_name": "추옵",
+      "description": "넥슨 공식 게임 용어 가이드에 명시된 줄임말",
+      "aliases": []
+    },
+    {
+      "entity_id": "abbreviation:ark-innocence-scroll",
+      "entity_type": "abbreviation",
+      "canonical_name": "아크이노",
+      "description": "넥슨 공식 게임 용어 가이드에 명시된 줄임말",
+      "aliases": []
+    },
+    {
+      "entity_id": "effect:ark-innocence-reset",
+      "entity_type": "effect",
+      "canonical_name": "잠재능력과 스타포스 강화를 제외한 모든 옵션을 표준 능력치로 초기화",
+      "description": "넥슨 공식 게임 용어 가이드에 명시된 아크 이노센트 주문서 효과",
+      "aliases": []
+    },
+    {
+      "entity_id": "game-term:additional-option",
+      "entity_type": "game_term",
+      "canonical_name": "추가 옵션",
+      "description": "넥슨 공식 게임정보 가이드에서 확인한 장비 옵션 명칭",
+      "aliases": []
+    },
+    {
+      "entity_id": "item:ark-innocence-scroll",
+      "entity_type": "item",
+      "canonical_name": "아크 이노센트 주문서",
+      "description": "넥슨 공식 게임 용어 가이드에서 확인한 주문서 명칭",
+      "aliases": []
+    },
+    {
+      "entity_id": "taxonomy:game-terms",
+      "entity_type": "taxonomy",
+      "canonical_name": "메이플스토리 게임 용어 체계",
+      "description": "공식 게임 용어와 커뮤니티 약어의 검수된 대응 체계",
+      "aliases": [
+        "게임 약어",
+        "게임 용어"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "subject_entity_id": "abbreviation:additional-option",
+      "predicate": "abbreviation_of",
+      "object_entity_id": "game-term:additional-option"
+    },
+    {
+      "subject_entity_id": "item:ark-innocence-scroll",
+      "predicate": "has_effect",
+      "object_entity_id": "effect:ark-innocence-reset"
+    },
+    {
+      "subject_entity_id": "abbreviation:ark-innocence-scroll",
+      "predicate": "abbreviation_of",
+      "object_entity_id": "item:ark-innocence-scroll"
+    },
+    {
+      "subject_entity_id": "item:ark-innocence-scroll",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:game-terms"
+    },
+    {
+      "subject_entity_id": "game-term:additional-option",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:game-terms"
+    }
+  ]
+}

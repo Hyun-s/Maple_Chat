@@ -128,12 +128,17 @@ class HuntingCalculationInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     level: int = Field(ge=200, le=299, description="캐릭터 현재 레벨 (200~299)")
-    current_exp_percent: float = Field(default=0.0, ge=0.0, lt=100.0, description="현재 경험치 퍼센트")
+    current_exp_percent: float = Field(
+        default=0.0, ge=0.0, lt=100.0, description="현재 경험치 퍼센트"
+    )
     mob_level: int = Field(ge=190, le=310, description="사냥터 몬스터 레벨")
     mob_base_exp: int | None = Field(
         default=None,
         ge=1,
-        description="몬스터 1마리당 기본 경험치 (생략 시 mob_level 기준 메이플 일반 몬스터 기준 순경험치 자동 적용)",
+        description=(
+            "몬스터 1마리당 기본 경험치 (생략 시 mob_level 기준 메이플 "
+            "일반 몬스터 기준 순경험치 자동 적용)"
+        ),
     )
     kill_rate_per_hour: int = Field(
         default=15000, ge=100, le=50000, description="시간당 처치 마릿수 (기본 15,000)"
@@ -210,14 +215,12 @@ def calculate_potion_exp(input_data: PotionCalculationInput) -> dict[str, Any]:
             # 경험치 % 비율은 보존됨
             cur_exp = int(LEVEL_EXP_TABLE.get(cur_lvl, req_for_cur) * (cur_pct / 100.0))
             step_log.append(
-                f"#{i} ({rule.name}): 1레벨 확정 상승 (Lv.{old_lvl} -> Lv.{cur_lvl}, 획득 {gained:,})"
+                f"#{i} ({rule.name}): 1레벨 확정 상승 (Lv.{old_lvl} -> "
+                f"Lv.{cur_lvl}, 획득 {gained:,})"
             )
         else:
             # 초과 구간: 상한 레벨의 100% 경험치 고정 지급
-            if rule.cap_level == 199:
-                gained = _LV199_EXP
-            else:
-                gained = LEVEL_EXP_TABLE[rule.cap_level]
+            gained = _LV199_EXP if rule.cap_level == 199 else LEVEL_EXP_TABLE[rule.cap_level]
             total_gained_exp += gained
             cur_exp += gained
             req = LEVEL_EXP_TABLE[cur_lvl]
@@ -232,11 +235,14 @@ def calculate_potion_exp(input_data: PotionCalculationInput) -> dict[str, Any]:
             new_pct = (cur_exp / LEVEL_EXP_TABLE[cur_lvl]) * 100.0 if cur_lvl < 300 else 100.0
             if leveled_up:
                 step_log.append(
-                    f"#{i} ({rule.name}): 고정 경험치 {gained:,} (+{gain_pct:.2f}%) 획득 -> 레벨업 (Lv.{cur_lvl} {new_pct:.2f}%)"
+                    f"#{i} ({rule.name}): 고정 경험치 {gained:,} "
+                    f"(+{gain_pct:.2f}%) 획득 -> 레벨업 (Lv.{cur_lvl} "
+                    f"{new_pct:.2f}%)"
                 )
             else:
                 step_log.append(
-                    f"#{i} ({rule.name}): 고정 경험치 {gained:,} (+{gain_pct:.2f}%) 획득 -> Lv.{cur_lvl} {new_pct:.2f}%"
+                    f"#{i} ({rule.name}): 고정 경험치 {gained:,} "
+                    f"(+{gain_pct:.2f}%) 획득 -> Lv.{cur_lvl} {new_pct:.2f}%"
                 )
             cur_pct = new_pct
 
@@ -319,7 +325,9 @@ async def _handle_get_monster_base_exp(value: BaseModel) -> dict[str, Any]:
     return {
         "mob_level": args.mob_level,
         "base_exp": base_exp,
-        "description": f"Lv.{args.mob_level} 메이플 일반 필드 몬스터 마리당 기준 순경험치: {base_exp:,}",
+        "description": (
+            f"Lv.{args.mob_level} 메이플 일반 필드 몬스터 마리당 기준 순경험치: {base_exp:,}"
+        ),
     }
 
 
@@ -328,19 +336,30 @@ def build_exp_skills_registry() -> ToolRegistry:
         (
             ToolSpec(
                 name="calculate_potion_exp",
-                description="캐릭터 레벨, 현재 경험치(%), 비약 종류(익성비/태성비/극성비/성비1~3/초월비), 개수로 정확한 획득 경험치, 최종 레벨 및 % 상승량을 계산한다.",
+                description=(
+                    "캐릭터 레벨, 현재 경험치(%), 비약 "
+                    "종류(익성비/태성비/극성비/성비1~3/초월비), 개수로 정확한 "
+                    "획득 경험치, 최종 레벨 및 % 상승량을 계산한다."
+                ),
                 input_model=PotionCalculationInput,
                 handler=_handle_calculate_potion_exp,
             ),
             ToolSpec(
                 name="calculate_hunting_efficiency",
-                description="캐릭터 레벨, 몬스터 레벨(기본 경험치 미입력 시 레벨 기준 자동 계산), 도핑 배율, 마릿수로 1시간/재획당 경험치(%), 레벨업 소요 시간을 계산한다.",
+                description=(
+                    "캐릭터 레벨, 몬스터 레벨(기본 경험치 미입력 시 레벨 기준 "
+                    "자동 계산), 도핑 배율, 마릿수로 1시간/재획당 경험치(%), "
+                    "레벨업 소요 시간을 계산한다."
+                ),
                 input_model=HuntingCalculationInput,
                 handler=_handle_calculate_hunting_efficiency,
             ),
             ToolSpec(
                 name="get_monster_base_exp",
-                description="몬스터 레벨(200~300)에 해당하는 메이플 일반 필드 몬스터의 기준 기본 순경험치를 조회한다.",
+                description=(
+                    "몬스터 레벨(200~300)에 해당하는 메이플 일반 필드 몬스터의 "
+                    "기준 기본 순경험치를 조회한다."
+                ),
                 input_model=MonsterExpLookupInput,
                 handler=_handle_get_monster_base_exp,
             ),

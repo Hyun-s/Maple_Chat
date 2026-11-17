@@ -25,6 +25,18 @@ dist/
 
 # Local data and OMX runtime artifacts
 data/
+
+# Reviewed built-in knowledge catalogs are packaged source, not operational data.
+!src/maple_chat/knowledge/data/
+src/maple_chat/knowledge/data/*
+!src/maple_chat/knowledge/data/boss-meyrin-v1.json
+!src/maple_chat/knowledge/data/boss-taxonomy-v1.json
+!src/maple_chat/knowledge/data/destiny-weapon-v1.json
+!src/maple_chat/knowledge/data/game-terms-v1.json
+!src/maple_chat/knowledge/data/item-abbreviations-v1.json
+!src/maple_chat/knowledge/data/job-skill-catalog-v1.json
+!src/maple_chat/knowledge/data/job-taxonomy-v1.json
+!src/maple_chat/knowledge/data/union-champion-v1.json
 .omx/
 backups/
 logs/

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+
 from maple_chat.skills.exp import (
     HuntingCalculationInput,
     PotionCalculationInput,
@@ -65,7 +66,8 @@ def test_over_cap_potion_gives_fixed_exp() -> None:
 
 
 def test_multiple_potions_carry_over_level_up() -> None:
-    # Lv 260 95%에서 극성비 1개 사용 -> 10.67% 경험치가 들어가므로 105.67% -> Lv 261 레벨업 및 잔여 % 이월
+    # Lv 260 95%에서 극성비 1개 사용 -> 10.67% 경험치가 들어가므로 105.67% -> Lv 261 레벨업 및
+    # 잔여 % 이월
     res = calculate_potion_exp(
         PotionCalculationInput(
             level=260,
@@ -171,4 +173,3 @@ async def test_exp_skills_tool_registry() -> None:
     )
     assert lookup_res["mob_level"] == 260
     assert lookup_res["base_exp"] == hunt_auto_res["mob_base_exp"]
-

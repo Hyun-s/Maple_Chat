@@ -1,0 +1,244 @@
+{
+  "schema_version": 1,
+  "source": {
+    "source_id": "maple-chat-curated-item-abbreviations",
+    "title": "Maple Chat 검수 아이템 약어표",
+    "url": "https://gi.maplestory.nexon.com/Guide/OtherProbability/game/gameOrderSheet",
+    "publisher": "Maple Chat maintainers",
+    "version": "2026-08-25-v1",
+    "checked_at": "2026-08-24T15:00:00+00:00"
+  },
+  "allowed_ambiguous_aliases": [],
+  "external_entity_ids": [],
+  "entities": [
+    {
+      "entity_id": "abbreviation:amazing-chaos-scroll",
+      "entity_type": "abbreviation",
+      "canonical_name": "놀혼",
+      "description": "커뮤니티에서 사용하는 검수 약어",
+      "aliases": []
+    },
+    {
+      "entity_id": "abbreviation:amazing-positive-chaos-scroll",
+      "entity_type": "abbreviation",
+      "canonical_name": "놀긍",
+      "description": "커뮤니티에서 사용하는 검수 약어",
+      "aliases": []
+    },
+    {
+      "entity_id": "abbreviation:miracle-accessory-attack-scroll",
+      "entity_type": "abbreviation",
+      "canonical_name": "미악공",
+      "description": "커뮤니티에서 사용하는 검수 약어",
+      "aliases": []
+    },
+    {
+      "entity_id": "abbreviation:miracle-accessory-magic-scroll",
+      "entity_type": "abbreviation",
+      "canonical_name": "미악마",
+      "description": "커뮤니티에서 사용하는 검수 약어",
+      "aliases": []
+    },
+    {
+      "entity_id": "abbreviation:positive-chaos-scroll",
+      "entity_type": "abbreviation",
+      "canonical_name": "긍혼",
+      "description": "커뮤니티에서 사용하는 검수 약어",
+      "aliases": []
+    },
+    {
+      "entity_id": "abbreviation:premium-accessory-attack-scroll",
+      "entity_type": "abbreviation",
+      "canonical_name": "프악공",
+      "description": "커뮤니티에서 사용하는 검수 약어",
+      "aliases": []
+    },
+    {
+      "entity_id": "abbreviation:premium-accessory-magic-scroll",
+      "entity_type": "abbreviation",
+      "canonical_name": "프악마",
+      "description": "커뮤니티에서 사용하는 검수 약어",
+      "aliases": []
+    },
+    {
+      "entity_id": "abbreviation:premium-pet-equipment-attack-scroll",
+      "entity_type": "abbreviation",
+      "canonical_name": "프펫공",
+      "description": "커뮤니티에서 사용하는 검수 약어",
+      "aliases": []
+    },
+    {
+      "entity_id": "abbreviation:premium-pet-equipment-magic-scroll",
+      "entity_type": "abbreviation",
+      "canonical_name": "프펫마",
+      "description": "커뮤니티에서 사용하는 검수 약어",
+      "aliases": []
+    },
+    {
+      "entity_id": "item:amazing-chaos-scroll",
+      "entity_type": "item",
+      "canonical_name": "놀라운 혼돈의 주문서",
+      "description": "넥슨 공식 확률형 아이템 가이드에서 확인한 주문서 명칭",
+      "aliases": []
+    },
+    {
+      "entity_id": "item:amazing-positive-chaos-scroll",
+      "entity_type": "item",
+      "canonical_name": "놀라운 긍정의 혼돈 주문서",
+      "description": "넥슨 공식 확률형 아이템 가이드에서 확인한 주문서 명칭",
+      "aliases": []
+    },
+    {
+      "entity_id": "item:miracle-accessory-attack-scroll",
+      "entity_type": "item",
+      "canonical_name": "미라클 악세서리 공격력 주문서",
+      "description": "넥슨 공식 확률형 아이템 가이드에서 확인한 주문서 명칭",
+      "aliases": []
+    },
+    {
+      "entity_id": "item:miracle-accessory-magic-scroll",
+      "entity_type": "item",
+      "canonical_name": "미라클 악세서리 마력 주문서",
+      "description": "넥슨 공식 확률형 아이템 가이드에서 확인한 주문서 명칭",
+      "aliases": []
+    },
+    {
+      "entity_id": "item:positive-chaos-scroll",
+      "entity_type": "item",
+      "canonical_name": "긍정의 혼돈 주문서",
+      "description": "넥슨 공식 확률형 아이템 가이드에서 확인한 주문서 명칭",
+      "aliases": []
+    },
+    {
+      "entity_id": "item:premium-accessory-attack-scroll",
+      "entity_type": "item",
+      "canonical_name": "프리미엄 악세서리 공격력 주문서",
+      "description": "넥슨 공식 확률형 아이템 가이드에서 확인한 주문서 명칭",
+      "aliases": []
+    },
+    {
+      "entity_id": "item:premium-accessory-magic-scroll",
+      "entity_type": "item",
+      "canonical_name": "프리미엄 악세서리 마력 주문서",
+      "description": "넥슨 공식 확률형 아이템 가이드에서 확인한 주문서 명칭",
+      "aliases": []
+    },
+    {
+      "entity_id": "item:premium-pet-equipment-attack-scroll",
+      "entity_type": "item",
+      "canonical_name": "프리미엄 펫 장비 공격력 주문서",
+      "description": "넥슨 공식 확률형 아이템 가이드에서 확인한 주문서 명칭",
+      "aliases": []
+    },
+    {
+      "entity_id": "item:premium-pet-equipment-magic-scroll",
+      "entity_type": "item",
+      "canonical_name": "프리미엄 펫 장비 마력 주문서",
+      "description": "넥슨 공식 확률형 아이템 가이드에서 확인한 주문서 명칭",
+      "aliases": []
+    },
+    {
+      "entity_id": "taxonomy:item-names",
+      "entity_type": "taxonomy",
+      "canonical_name": "메이플스토리 아이템 명칭 체계",
+      "description": "공식 아이템 이름과 커뮤니티 약어의 검수된 대응 체계",
+      "aliases": [
+        "아이템 명칭",
+        "아이템 약어",
+        "주문서 약어"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "subject_entity_id": "item:amazing-positive-chaos-scroll",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:item-names"
+    },
+    {
+      "subject_entity_id": "item:amazing-chaos-scroll",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:item-names"
+    },
+    {
+      "subject_entity_id": "item:miracle-accessory-attack-scroll",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:item-names"
+    },
+    {
+      "subject_entity_id": "abbreviation:premium-accessory-magic-scroll",
+      "predicate": "abbreviation_of",
+      "object_entity_id": "item:premium-accessory-magic-scroll"
+    },
+    {
+      "subject_entity_id": "item:premium-accessory-magic-scroll",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:item-names"
+    },
+    {
+      "subject_entity_id": "item:premium-pet-equipment-magic-scroll",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:item-names"
+    },
+    {
+      "subject_entity_id": "abbreviation:premium-pet-equipment-magic-scroll",
+      "predicate": "abbreviation_of",
+      "object_entity_id": "item:premium-pet-equipment-magic-scroll"
+    },
+    {
+      "subject_entity_id": "item:miracle-accessory-magic-scroll",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:item-names"
+    },
+    {
+      "subject_entity_id": "abbreviation:miracle-accessory-attack-scroll",
+      "predicate": "abbreviation_of",
+      "object_entity_id": "item:miracle-accessory-attack-scroll"
+    },
+    {
+      "subject_entity_id": "abbreviation:amazing-positive-chaos-scroll",
+      "predicate": "abbreviation_of",
+      "object_entity_id": "item:amazing-positive-chaos-scroll"
+    },
+    {
+      "subject_entity_id": "item:premium-accessory-attack-scroll",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:item-names"
+    },
+    {
+      "subject_entity_id": "abbreviation:premium-accessory-attack-scroll",
+      "predicate": "abbreviation_of",
+      "object_entity_id": "item:premium-accessory-attack-scroll"
+    },
+    {
+      "subject_entity_id": "abbreviation:premium-pet-equipment-attack-scroll",
+      "predicate": "abbreviation_of",
+      "object_entity_id": "item:premium-pet-equipment-attack-scroll"
+    },
+    {
+      "subject_entity_id": "abbreviation:amazing-chaos-scroll",
+      "predicate": "abbreviation_of",
+      "object_entity_id": "item:amazing-chaos-scroll"
+    },
+    {
+      "subject_entity_id": "abbreviation:positive-chaos-scroll",
+      "predicate": "abbreviation_of",
+      "object_entity_id": "item:positive-chaos-scroll"
+    },
+    {
+      "subject_entity_id": "abbreviation:miracle-accessory-magic-scroll",
+      "predicate": "abbreviation_of",
+      "object_entity_id": "item:miracle-accessory-magic-scroll"
+    },
+    {
+      "subject_entity_id": "item:positive-chaos-scroll",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:item-names"
+    },
+    {
+      "subject_entity_id": "item:premium-pet-equipment-attack-scroll",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:item-names"
+    }
+  ]
+}

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+
 import pytest
 
 from maple_chat.skills.job_guide import _load_job_guides, get_job_guide, list_available_guides
@@ -26,13 +27,17 @@ def test_all_guide_files_conform_to_schema():
     assert len(json_files) > 0, "At least one guide JSON file should exist"
 
     for json_file in json_files:
-        with open(json_file, "r", encoding="utf-8") as f:
+        with open(json_file, encoding="utf-8") as f:
             data = json.load(f)
         missing = required_keys - set(data.keys())
         assert not missing, f"{json_file.name} missing required keys: {missing}"
         assert data["job_name"].strip(), f"{json_file.name} has empty job_name"
-        assert isinstance(data["burst_rotation"], dict), f"{json_file.name} burst_rotation must be a dict"
-        assert ("steps" in data["burst_rotation"] or "sequence" in data["burst_rotation"]), f"{json_file.name} burst_rotation must have steps or sequence"
+        assert isinstance(data["burst_rotation"], dict), (
+            f"{json_file.name} burst_rotation must be a dict"
+        )
+        assert "steps" in data["burst_rotation"] or "sequence" in data["burst_rotation"], (
+            f"{json_file.name} burst_rotation must have steps or sequence"
+        )
 
 
 def test_get_job_guide_returns_valid_structure_for_existing_jobs():

@@ -6,7 +6,7 @@ import json
 import logging
 import time
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import redis
@@ -18,9 +18,7 @@ logger = logging.getLogger(__name__)
 class ConversationTurn:
     question: str
     answer: str
-    created_at: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
+    created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -54,6 +52,7 @@ class SessionManager:
         self.ttl_seconds = ttl_seconds
         self._memory_store: dict[str, tuple[float, list[dict[str, Any]]]] = {}
 
+        self.redis: redis.Redis | None
         if redis_client is not None:
             self.redis = redis_client
         elif host is not None:
@@ -139,7 +138,7 @@ class SessionManager:
     def format_history_for_prompt(self, turns: tuple[ConversationTurn, ...]) -> str:
         if not turns:
             return ""
-        lines = ["[최근 대화 맥락]" ]
+        lines = ["[최근 대화 맥락]"]
         for index, turn in enumerate(turns, 1):
             lines.append(f"- 사용자 ({index}): {turn.question}")
             # 너무 긴 답변은 앞 250자로 축약하여 프롬프트 토큰 절약
@@ -148,7 +147,8 @@ class SessionManager:
                 summary = summary[:300] + "..."
             lines.append(f"  답변: {summary}")
         lines.append(
-            "이전 대화에서 언급된 레벨, 닉네임, 사냥터 등의 맥락이 현재 질문과 이어지는 경우 이를 반영하여 구체적으로 답한다."
+            "이전 대화에서 언급된 레벨, 닉네임, 사냥터 등의 맥락이 현재 "
+            "질문과 이어지는 경우 이를 반영하여 구체적으로 답한다."
         )
         return "\n".join(lines)
 

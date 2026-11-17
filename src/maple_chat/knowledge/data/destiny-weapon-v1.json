@@ -1,0 +1,254 @@
+{
+  "schema_version": 1,
+  "source": {
+    "source_id": "nexon-destiny-weapon-update-1-2-401",
+    "title": "클라이언트 1.2.401 업데이트 안내 - 데스티니 무기와 결전 퀘스트",
+    "url": "https://maplestory.nexon.com/News/Update/767",
+    "publisher": "NEXON Korea",
+    "version": "1.2.401-2025-03-20",
+    "checked_at": "2026-08-24T15:00:00+00:00"
+  },
+  "allowed_ambiguous_aliases": [
+    "데스티니"
+  ],
+  "external_entity_ids": [
+    "boss:chosen-seren",
+    "boss:kaling",
+    "boss:watcher-kalos"
+  ],
+  "entities": [
+    {
+      "entity_id": "abbreviation:destiny-weapon",
+      "entity_type": "abbreviation",
+      "canonical_name": "데티",
+      "description": "커뮤니티에서 데스티니 무기를 가리키는 검수 약어",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss-variant:chosen-seren-destiny",
+      "entity_type": "boss_variant",
+      "canonical_name": "선택받은 세렌 (데스티니 모드)",
+      "description": "데스티니 무기 결전 퀘스트용 선택받은 세렌 보스 변형",
+      "aliases": [
+        "데스티니 세렌",
+        "데스티니 난이도 세렌",
+        "세렌 데스티니",
+        "세렌 데스티니 모드"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:kaling-destiny",
+      "entity_type": "boss_variant",
+      "canonical_name": "카링 (데스티니 모드)",
+      "description": "데스티니 무기 결전 퀘스트용 카링 보스 변형",
+      "aliases": [
+        "데스티니 카링",
+        "데스티니 난이도 카링",
+        "데스티니 사도 카링",
+        "카링 데스티니",
+        "카링 데스티니 모드"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:watcher-kalos-destiny",
+      "entity_type": "boss_variant",
+      "canonical_name": "감시자 칼로스 (데스티니 모드)",
+      "description": "데스티니 무기 결전 퀘스트용 감시자 칼로스 보스 변형",
+      "aliases": [
+        "데스티니 칼로스",
+        "데스티니 난이도 칼로스",
+        "칼로스 데스티니",
+        "칼로스 데스티니 모드"
+      ]
+    },
+    {
+      "entity_id": "challenge-condition:destiny-death-count-3",
+      "entity_type": "challenge_condition",
+      "canonical_name": "데스 카운트 3으로 감소",
+      "description": "감시자 칼로스 데스티니 모드에 적용되는 공식 결전 조건",
+      "aliases": []
+    },
+    {
+      "entity_id": "challenge-condition:destiny-final-damage-20-up",
+      "entity_type": "challenge_condition",
+      "canonical_name": "최종 데미지 20% 증가",
+      "description": "카링 데스티니 모드에 적용되는 공식 결전 조건",
+      "aliases": []
+    },
+    {
+      "entity_id": "challenge-condition:destiny-final-damage-80-down",
+      "entity_type": "challenge_condition",
+      "canonical_name": "최종 데미지 80% 감소",
+      "description": "선택받은 세렌 데스티니 모드에 적용되는 공식 결전 조건",
+      "aliases": []
+    },
+    {
+      "entity_id": "content-mode:destiny",
+      "entity_type": "content_mode",
+      "canonical_name": "데스티니 모드",
+      "description": "데스티니 무기 결전 퀘스트에서 선택받은 세렌·감시자 칼로스·카링에게 적용되는 공식 1인 보스 도전 모드",
+      "aliases": [
+        "데스티니",
+        "데티모드",
+        "데스티니 보스",
+        "데스티니 난이도",
+        "데스티니 보스 모드",
+        "데티 모드"
+      ]
+    },
+    {
+      "entity_id": "progression:destiny-weapon",
+      "entity_type": "progression_system",
+      "canonical_name": "데스티니 무기 초월",
+      "description": "제네시스 무기를 데스티니 무기로 초월하는 장비 성장 체계",
+      "aliases": [
+        "데스티니 초월"
+      ]
+    },
+    {
+      "entity_id": "quest:destiny-showdown-chosen-seren",
+      "entity_type": "quest",
+      "canonical_name": "결전, 선택받은 세렌",
+      "description": "데스티니 무기 초월을 위한 선택받은 세렌 결전 퀘스트",
+      "aliases": [
+        "데스티니 선택받은 세렌 결전 퀘스트"
+      ]
+    },
+    {
+      "entity_id": "quest:destiny-showdown-kaling",
+      "entity_type": "quest",
+      "canonical_name": "결전, 카링",
+      "description": "데스티니 무기 초월을 위한 카링 결전 퀘스트",
+      "aliases": [
+        "데스티니 카링 결전 퀘스트"
+      ]
+    },
+    {
+      "entity_id": "quest:destiny-showdown-watcher-kalos",
+      "entity_type": "quest",
+      "canonical_name": "결전, 감시자 칼로스",
+      "description": "데스티니 무기 초월을 위한 감시자 칼로스 결전 퀘스트",
+      "aliases": [
+        "데스티니 감시자 칼로스 결전 퀘스트"
+      ]
+    },
+    {
+      "entity_id": "weapon:destiny",
+      "entity_type": "weapon",
+      "canonical_name": "데스티니 무기",
+      "description": "제네시스 무기를 초월해 얻는 250레벨 무기. 데스티니 모드와 같은 표면어를 공유한다.",
+      "aliases": [
+        "데스티니"
+      ]
+    },
+    {
+      "entity_id": "weapon:genesis",
+      "entity_type": "weapon",
+      "canonical_name": "제네시스 무기",
+      "description": "데스티니 무기로 초월하기 전 단계의 무기",
+      "aliases": []
+    }
+  ],
+  "relations": [
+    {
+      "subject_entity_id": "weapon:destiny",
+      "predicate": "upgrades_from",
+      "object_entity_id": "weapon:genesis"
+    },
+    {
+      "subject_entity_id": "boss-variant:watcher-kalos-destiny",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:watcher-kalos"
+    },
+    {
+      "subject_entity_id": "quest:destiny-showdown-kaling",
+      "predicate": "part_of",
+      "object_entity_id": "progression:destiny-weapon"
+    },
+    {
+      "subject_entity_id": "boss-variant:chosen-seren-destiny",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:chosen-seren"
+    },
+    {
+      "subject_entity_id": "boss-variant:kaling-destiny",
+      "predicate": "uses_mode",
+      "object_entity_id": "content-mode:destiny"
+    },
+    {
+      "subject_entity_id": "abbreviation:destiny-weapon",
+      "predicate": "abbreviation_of",
+      "object_entity_id": "weapon:destiny"
+    },
+    {
+      "subject_entity_id": "boss-variant:watcher-kalos-destiny",
+      "predicate": "has_condition",
+      "object_entity_id": "challenge-condition:destiny-death-count-3"
+    },
+    {
+      "subject_entity_id": "quest:destiny-showdown-kaling",
+      "predicate": "requires",
+      "object_entity_id": "boss-variant:kaling-destiny"
+    },
+    {
+      "subject_entity_id": "weapon:destiny",
+      "predicate": "part_of",
+      "object_entity_id": "progression:destiny-weapon"
+    },
+    {
+      "subject_entity_id": "content-mode:destiny",
+      "predicate": "part_of",
+      "object_entity_id": "progression:destiny-weapon"
+    },
+    {
+      "subject_entity_id": "boss-variant:kaling-destiny",
+      "predicate": "has_condition",
+      "object_entity_id": "challenge-condition:destiny-final-damage-20-up"
+    },
+    {
+      "subject_entity_id": "quest:destiny-showdown-watcher-kalos",
+      "predicate": "part_of",
+      "object_entity_id": "progression:destiny-weapon"
+    },
+    {
+      "subject_entity_id": "boss-variant:watcher-kalos-destiny",
+      "predicate": "uses_mode",
+      "object_entity_id": "content-mode:destiny"
+    },
+    {
+      "subject_entity_id": "boss-variant:chosen-seren-destiny",
+      "predicate": "uses_mode",
+      "object_entity_id": "content-mode:destiny"
+    },
+    {
+      "subject_entity_id": "progression:destiny-weapon",
+      "predicate": "requires",
+      "object_entity_id": "weapon:genesis"
+    },
+    {
+      "subject_entity_id": "quest:destiny-showdown-watcher-kalos",
+      "predicate": "requires",
+      "object_entity_id": "boss-variant:watcher-kalos-destiny"
+    },
+    {
+      "subject_entity_id": "boss-variant:kaling-destiny",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:kaling"
+    },
+    {
+      "subject_entity_id": "boss-variant:chosen-seren-destiny",
+      "predicate": "has_condition",
+      "object_entity_id": "challenge-condition:destiny-final-damage-80-down"
+    },
+    {
+      "subject_entity_id": "quest:destiny-showdown-chosen-seren",
+      "predicate": "part_of",
+      "object_entity_id": "progression:destiny-weapon"
+    },
+    {
+      "subject_entity_id": "quest:destiny-showdown-chosen-seren",
+      "predicate": "requires",
+      "object_entity_id": "boss-variant:chosen-seren-destiny"
+    }
+  ]
+}

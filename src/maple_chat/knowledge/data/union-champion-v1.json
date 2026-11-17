@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "source": {
+    "source_id": "maple-chat-curated-union-champion-terms",
+    "title": "Maple Chat 검수 유니온 챔피언 용어표",
+    "url": "https://maplestory.nexon.com/News/Update/764",
+    "publisher": "Maple Chat maintainers",
+    "version": "2026-08-25-v1",
+    "checked_at": "2026-08-24T15:00:00+00:00"
+  },
+  "allowed_ambiguous_aliases": [],
+  "external_entity_ids": [],
+  "entities": [
+    {
+      "entity_id": "abbreviation:union-champion",
+      "entity_type": "abbreviation",
+      "canonical_name": "유챔",
+      "description": "커뮤니티에서 유니온 챔피언을 가리키는 검수 약어",
+      "aliases": []
+    },
+    {
+      "entity_id": "content-mode:union-champion",
+      "entity_type": "content_mode",
+      "canonical_name": "챔피언 모드",
+      "description": "유니온 챔피언 평가전에 사용하는 보스 도전 모드",
+      "aliases": [
+        "유챔모드",
+        "유챔 모드"
+      ]
+    },
+    {
+      "entity_id": "system:union-champion",
+      "entity_type": "content_system",
+      "canonical_name": "유니온 챔피언",
+      "description": "월드 내 일부 캐릭터를 챔피언으로 지정하고 성장 수준에 따라 능력치를 얻는 시스템",
+      "aliases": []
+    }
+  ],
+  "relations": [
+    {
+      "subject_entity_id": "abbreviation:union-champion",
+      "predicate": "abbreviation_of",
+      "object_entity_id": "system:union-champion"
+    },
+    {
+      "subject_entity_id": "content-mode:union-champion",
+      "predicate": "part_of",
+      "object_entity_id": "system:union-champion"
+    }
+  ]
+}

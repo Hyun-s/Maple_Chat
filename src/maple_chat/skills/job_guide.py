@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from maple_chat.agent.tools import ToolRegistry, ToolSpec
+
+logger = logging.getLogger(__name__)
 
 _JOB_GUIDES_CACHE: dict[str, Any] | None = None
 _JOB_GUIDES_MTIME: float = 0.0
@@ -34,22 +37,23 @@ def _load_job_guides(force_reload: bool = False) -> dict[str, Any]:
         bundle_path = base_dir / "job_guides.json"
         if bundle_path.exists():
             try:
-                with open(bundle_path, "r", encoding="utf-8") as f:
+                with open(bundle_path, encoding="utf-8") as f:
                     guides.update(json.load(f))
             except Exception:
-                pass
+                logger.warning("Unable to load optional guide bundle; continuing without it")
 
         # 2. Load individual modular guide files from guides/ dir
         guides_dir = base_dir / "guides"
         if guides_dir.exists():
             for json_path in sorted(guides_dir.glob("*.json")):
                 try:
-                    with open(json_path, "r", encoding="utf-8") as f:
+                    with open(json_path, encoding="utf-8") as f:
                         data = json.load(f)
                         job_name = data.get("job_name")
                         if job_name:
                             guides[job_name] = data
                 except Exception:
+                    logger.warning("Unable to load optional guide file; skipping it")
                     continue
 
         _JOB_GUIDES_CACHE = guides
@@ -64,10 +68,14 @@ def list_available_guides() -> list[str]:
 class JobGuideInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    job_name: str = Field(description="조회할 메이플스토리 직업 이름 (예: 팬텀, 나이트워커, 히어로)")
+    job_name: str = Field(
+        description="조회할 메이플스토리 직업 이름 (예: 팬텀, 나이트워커, 히어로)"
+    )
     topic: str | None = Field(
         default=None,
-        description="조회할 공략 주제 ('딜사이클', '스킬', '코강', '스틸스킬' 등). 미입력 시 전체 공략 조회",
+        description=(
+            "조회할 공략 주제 ('딜사이클', '스킬', '코강', '스틸스킬' 등). 미입력 시 전체 공략 조회"
+        ),
     )
 
 
@@ -89,7 +97,10 @@ def get_job_guide(job_name: str, topic: str | None = None) -> dict[str, Any]:
         return {
             "found": False,
             "job_name": norm_name,
-            "message": f"'{norm_name}' 직업의 정제된 실전 공략 가이드 데이터가 아직 등록되어 있지 않습니다.",
+            "message": (
+                f"'{norm_name}' 직업의 정제된 실전 공략 가이드 데이터가 아직 "
+                f"등록되어 있지 않습니다."
+            ),
             "available_jobs": list_available_guides(),
         }
 

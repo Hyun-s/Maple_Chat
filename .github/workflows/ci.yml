@@ -28,6 +28,8 @@ jobs:
           pip-audit
       - name: Dependency license inventory
         run: pip-licenses --format=markdown --with-urls
+      - name: Native OCR and file cache compatibility
+        run: pytest -q tests/smoke/test_runtime_dependencies.py
       - name: Lint and formatting
         run: |
           ruff check src tests migrations

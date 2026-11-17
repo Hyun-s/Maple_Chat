@@ -1,0 +1,2362 @@
+{
+  "schema_version": 1,
+  "source": {
+    "source_id": "nexon-boss-reward-guide-2026-08-25",
+    "title": "메이플스토리 공식 보스별 주요 보상 가이드",
+    "url": "https://maplestory.nexon.com/Guide/N23GameInformation/Articles/Search?keyword=%EA%B2%B0%EC%A0%95%EC%84%9D&page=1",
+    "publisher": "NEXON Korea",
+    "version": "2026-08-25-v1",
+    "checked_at": "2026-08-24T15:00:00+00:00"
+  },
+  "allowed_ambiguous_aliases": [],
+  "external_entity_ids": [],
+  "entities": [
+    {
+      "entity_id": "boss:arkarium",
+      "entity_type": "boss",
+      "canonical_name": "아카이럼",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:baldrix",
+      "entity_type": "boss",
+      "canonical_name": "발드릭스",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:balrog",
+      "entity_type": "boss",
+      "canonical_name": "발록",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:bellona",
+      "entity_type": "boss",
+      "canonical_name": "벨로나",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:black-mage",
+      "entity_type": "boss",
+      "canonical_name": "검은 마법사",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": [
+        "검마"
+      ]
+    },
+    {
+      "entity_id": "boss:bloody-queen",
+      "entity_type": "boss",
+      "canonical_name": "블러디퀸",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": [
+        "블퀸",
+        "블러디 퀸"
+      ]
+    },
+    {
+      "entity_id": "boss:brilliant-malefic-star",
+      "entity_type": "boss",
+      "canonical_name": "찬란한 흉성",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": [
+        "흉성"
+      ]
+    },
+    {
+      "entity_id": "boss:chosen-seren",
+      "entity_type": "boss",
+      "canonical_name": "선택받은 세렌",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": [
+        "세렌"
+      ]
+    },
+    {
+      "entity_id": "boss:cygnus",
+      "entity_type": "boss",
+      "canonical_name": "시그너스",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:damien",
+      "entity_type": "boss",
+      "canonical_name": "데미안",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:first-adversary",
+      "entity_type": "boss",
+      "canonical_name": "최초의 대적자",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": [
+        "대적자"
+      ]
+    },
+    {
+      "entity_id": "boss:gloom",
+      "entity_type": "boss",
+      "canonical_name": "더스크",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:guard-captain-darknell",
+      "entity_type": "boss",
+      "canonical_name": "친위대장 듄켈",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": [
+        "듄켈"
+      ]
+    },
+    {
+      "entity_id": "boss:guardian-angel-slime",
+      "entity_type": "boss",
+      "canonical_name": "가디언 엔젤 슬라임",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": [
+        "가엔슬"
+      ]
+    },
+    {
+      "entity_id": "boss:hilla",
+      "entity_type": "boss",
+      "canonical_name": "힐라",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:horntail",
+      "entity_type": "boss",
+      "canonical_name": "혼테일",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:jupiter",
+      "entity_type": "boss",
+      "canonical_name": "유피테르",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:kaling",
+      "entity_type": "boss",
+      "canonical_name": "카링",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:kaung",
+      "entity_type": "boss",
+      "canonical_name": "카웅",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:limbo",
+      "entity_type": "boss",
+      "canonical_name": "림보",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:lotus",
+      "entity_type": "boss",
+      "canonical_name": "스우",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:lucid",
+      "entity_type": "boss",
+      "canonical_name": "루시드",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:magnus",
+      "entity_type": "boss",
+      "canonical_name": "매그너스",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:papulatus",
+      "entity_type": "boss",
+      "canonical_name": "파풀라투스",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": [
+        "파풀"
+      ]
+    },
+    {
+      "entity_id": "boss:pierre",
+      "entity_type": "boss",
+      "canonical_name": "피에르",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:pink-bean",
+      "entity_type": "boss",
+      "canonical_name": "핑크빈",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": [
+        "핑크 빈"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:arkarium-easy",
+      "entity_type": "boss_variant",
+      "canonical_name": "아카이럼 (이지)",
+      "description": "아카이럼의 이지 난이도 변형",
+      "aliases": [
+        "이지아카이럼",
+        "아카이럼 이지",
+        "이지 아카이럼"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:arkarium-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "아카이럼 (노멀)",
+      "description": "아카이럼의 노멀 난이도 변형",
+      "aliases": [
+        "노말아카이럼",
+        "노멀아카이럼",
+        "아카이럼 노말",
+        "아카이럼 노멀",
+        "노말 아카이럼",
+        "노멀 아카이럼"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:baldrix-hard",
+      "entity_type": "boss_variant",
+      "canonical_name": "발드릭스 (하드)",
+      "description": "발드릭스의 하드 난이도 변형",
+      "aliases": [
+        "하드발드릭스",
+        "발드릭스 하드",
+        "하드 발드릭스"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:baldrix-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "발드릭스 (노멀)",
+      "description": "발드릭스의 노멀 난이도 변형",
+      "aliases": [
+        "노말발드릭스",
+        "노멀발드릭스",
+        "발드릭스 노말",
+        "발드릭스 노멀",
+        "노말 발드릭스",
+        "노멀 발드릭스"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:balrog-easy",
+      "entity_type": "boss_variant",
+      "canonical_name": "발록 (이지)",
+      "description": "발록의 이지 난이도 변형",
+      "aliases": [
+        "이지발록",
+        "발록 이지",
+        "이지 발록"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:bellona-easy",
+      "entity_type": "boss_variant",
+      "canonical_name": "벨로나 (이지)",
+      "description": "벨로나의 이지 난이도 변형",
+      "aliases": [
+        "이지벨로나",
+        "벨로나 이지",
+        "이지 벨로나"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:bellona-hard",
+      "entity_type": "boss_variant",
+      "canonical_name": "벨로나 (하드)",
+      "description": "벨로나의 하드 난이도 변형",
+      "aliases": [
+        "하드벨로나",
+        "벨로나 하드",
+        "하드 벨로나"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:bellona-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "벨로나 (노멀)",
+      "description": "벨로나의 노멀 난이도 변형",
+      "aliases": [
+        "노말벨로나",
+        "노멀벨로나",
+        "벨로나 노말",
+        "벨로나 노멀",
+        "노말 벨로나",
+        "노멀 벨로나"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:black-mage-extreme",
+      "entity_type": "boss_variant",
+      "canonical_name": "검은 마법사 (익스트림)",
+      "description": "검은 마법사의 익스트림 난이도 변형",
+      "aliases": [
+        "익스검마",
+        "익스트림검마",
+        "익스트림검은 마법사",
+        "익스트림 검마",
+        "익스검은 마법사",
+        "익스트림 검은 마법사",
+        "익스 검마",
+        "검은 마법사 익스",
+        "검은 마법사 익스트림",
+        "익스 검은 마법사"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:black-mage-hard",
+      "entity_type": "boss_variant",
+      "canonical_name": "검은 마법사 (하드)",
+      "description": "검은 마법사의 하드 난이도 변형",
+      "aliases": [
+        "하드검마",
+        "하드검은 마법사",
+        "하드 검마",
+        "검은 마법사 하드",
+        "하드 검은 마법사"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:bloody-queen-chaos",
+      "entity_type": "boss_variant",
+      "canonical_name": "블러디퀸 (카오스)",
+      "description": "블러디퀸의 카오스 난이도 변형",
+      "aliases": [
+        "카오스블퀸",
+        "카오스블러디퀸",
+        "카오스블러디 퀸",
+        "블러디퀸 카오스",
+        "카오스 블퀸",
+        "카오스 블러디퀸",
+        "카오스 블러디 퀸"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:bloody-queen-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "블러디퀸 (노멀)",
+      "description": "블러디퀸의 노멀 난이도 변형",
+      "aliases": [
+        "노말블퀸",
+        "노멀블퀸",
+        "노말블러디퀸",
+        "노멀블러디퀸",
+        "노말블러디 퀸",
+        "노멀블러디 퀸",
+        "블러디퀸 노말",
+        "블러디퀸 노멀",
+        "노말 블퀸",
+        "노멀 블퀸",
+        "노말 블러디퀸",
+        "노멀 블러디퀸",
+        "노말 블러디 퀸",
+        "노멀 블러디 퀸"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:brilliant-malefic-star-hard",
+      "entity_type": "boss_variant",
+      "canonical_name": "찬란한 흉성 (하드)",
+      "description": "찬란한 흉성의 하드 난이도 변형",
+      "aliases": [
+        "하드흉성",
+        "하드찬란한 흉성",
+        "찬란한 흉성 하드",
+        "하드 흉성",
+        "하드 찬란한 흉성"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:brilliant-malefic-star-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "찬란한 흉성 (노멀)",
+      "description": "찬란한 흉성의 노멀 난이도 변형",
+      "aliases": [
+        "노말흉성",
+        "노멀흉성",
+        "노말찬란한 흉성",
+        "노멀찬란한 흉성",
+        "찬란한 흉성 노말",
+        "찬란한 흉성 노멀",
+        "노말 흉성",
+        "노멀 흉성",
+        "노말 찬란한 흉성",
+        "노멀 찬란한 흉성"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:chosen-seren-extreme",
+      "entity_type": "boss_variant",
+      "canonical_name": "선택받은 세렌 (익스트림)",
+      "description": "선택받은 세렌의 익스트림 난이도 변형",
+      "aliases": [
+        "익스세렌",
+        "익스트림세렌",
+        "익스트림선택받은 세렌",
+        "익스선택받은 세렌",
+        "익스트림 세렌",
+        "익스트림 선택받은 세렌",
+        "선택받은 세렌 익스",
+        "선택받은 세렌 익스트림",
+        "익스 세렌",
+        "익스 선택받은 세렌"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:chosen-seren-hard",
+      "entity_type": "boss_variant",
+      "canonical_name": "선택받은 세렌 (하드)",
+      "description": "선택받은 세렌의 하드 난이도 변형",
+      "aliases": [
+        "하드세렌",
+        "하드선택받은 세렌",
+        "선택받은 세렌 하드",
+        "하드 세렌",
+        "하드 선택받은 세렌"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:chosen-seren-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "선택받은 세렌 (노멀)",
+      "description": "선택받은 세렌의 노멀 난이도 변형",
+      "aliases": [
+        "노말세렌",
+        "노멀세렌",
+        "노말선택받은 세렌",
+        "노멀선택받은 세렌",
+        "선택받은 세렌 노말",
+        "선택받은 세렌 노멀",
+        "노말 세렌",
+        "노멀 세렌",
+        "노말 선택받은 세렌",
+        "노멀 선택받은 세렌"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:cygnus-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "시그너스 (노멀)",
+      "description": "시그너스의 노멀 난이도 변형",
+      "aliases": [
+        "노말시그너스",
+        "노멀시그너스",
+        "시그너스 노말",
+        "시그너스 노멀",
+        "노말 시그너스",
+        "노멀 시그너스"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:damien-hard",
+      "entity_type": "boss_variant",
+      "canonical_name": "데미안 (하드)",
+      "description": "데미안의 하드 난이도 변형",
+      "aliases": [
+        "하드데미안",
+        "데미안 하드",
+        "하드 데미안"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:damien-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "데미안 (노멀)",
+      "description": "데미안의 노멀 난이도 변형",
+      "aliases": [
+        "노말데미안",
+        "노멀데미안",
+        "데미안 노말",
+        "데미안 노멀",
+        "노말 데미안",
+        "노멀 데미안"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:first-adversary-easy",
+      "entity_type": "boss_variant",
+      "canonical_name": "최초의 대적자 (이지)",
+      "description": "최초의 대적자의 이지 난이도 변형",
+      "aliases": [
+        "이지대적자",
+        "이지최초의 대적자",
+        "최초의 대적자 이지",
+        "이지 대적자",
+        "이지 최초의 대적자"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:first-adversary-extreme",
+      "entity_type": "boss_variant",
+      "canonical_name": "최초의 대적자 (익스트림)",
+      "description": "최초의 대적자의 익스트림 난이도 변형",
+      "aliases": [
+        "익스대적자",
+        "익스트림대적자",
+        "익스트림최초의 대적자",
+        "익스최초의 대적자",
+        "익스트림 대적자",
+        "익스트림 최초의 대적자",
+        "최초의 대적자 익스",
+        "최초의 대적자 익스트림",
+        "익스 대적자",
+        "익스 최초의 대적자"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:first-adversary-hard",
+      "entity_type": "boss_variant",
+      "canonical_name": "최초의 대적자 (하드)",
+      "description": "최초의 대적자의 하드 난이도 변형",
+      "aliases": [
+        "하드대적자",
+        "하드최초의 대적자",
+        "최초의 대적자 하드",
+        "하드 대적자",
+        "하드 최초의 대적자"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:first-adversary-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "최초의 대적자 (노멀)",
+      "description": "최초의 대적자의 노멀 난이도 변형",
+      "aliases": [
+        "노말대적자",
+        "노멀대적자",
+        "노말최초의 대적자",
+        "노멀최초의 대적자",
+        "최초의 대적자 노말",
+        "최초의 대적자 노멀",
+        "노말 대적자",
+        "노멀 대적자",
+        "노말 최초의 대적자",
+        "노멀 최초의 대적자"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:gloom-chaos",
+      "entity_type": "boss_variant",
+      "canonical_name": "더스크 (카오스)",
+      "description": "더스크의 카오스 난이도 변형",
+      "aliases": [
+        "카오스더스크",
+        "더스크 카오스",
+        "카오스 더스크"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:gloom-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "더스크 (노멀)",
+      "description": "더스크의 노멀 난이도 변형",
+      "aliases": [
+        "노말더스크",
+        "노멀더스크",
+        "더스크 노말",
+        "더스크 노멀",
+        "노말 더스크",
+        "노멀 더스크"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:guard-captain-darknell-hard",
+      "entity_type": "boss_variant",
+      "canonical_name": "친위대장 듄켈 (하드)",
+      "description": "친위대장 듄켈의 하드 난이도 변형",
+      "aliases": [
+        "하드듄켈",
+        "하드친위대장 듄켈",
+        "친위대장 듄켈 하드",
+        "하드 듄켈",
+        "하드 친위대장 듄켈"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:guard-captain-darknell-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "친위대장 듄켈 (노멀)",
+      "description": "친위대장 듄켈의 노멀 난이도 변형",
+      "aliases": [
+        "노말듄켈",
+        "노멀듄켈",
+        "노말친위대장 듄켈",
+        "노멀친위대장 듄켈",
+        "친위대장 듄켈 노말",
+        "친위대장 듄켈 노멀",
+        "노말 듄켈",
+        "노멀 듄켈",
+        "노말 친위대장 듄켈",
+        "노멀 친위대장 듄켈"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:guardian-angel-slime-chaos",
+      "entity_type": "boss_variant",
+      "canonical_name": "가디언 엔젤 슬라임 (카오스)",
+      "description": "가디언 엔젤 슬라임의 카오스 난이도 변형",
+      "aliases": [
+        "카오스가엔슬",
+        "카오스가디언 엔젤 슬라임",
+        "카오스 가엔슬",
+        "카오스 가디언 엔젤 슬라임",
+        "가디언 엔젤 슬라임 카오스"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:guardian-angel-slime-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "가디언 엔젤 슬라임 (노멀)",
+      "description": "가디언 엔젤 슬라임의 노멀 난이도 변형",
+      "aliases": [
+        "노말가엔슬",
+        "노멀가엔슬",
+        "노말가디언 엔젤 슬라임",
+        "노멀가디언 엔젤 슬라임",
+        "가디언 엔젤 슬라임 노말",
+        "가디언 엔젤 슬라임 노멀",
+        "노말 가엔슬",
+        "노멀 가엔슬",
+        "노말 가디언 엔젤 슬라임",
+        "노멀 가디언 엔젤 슬라임"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:hilla-hard",
+      "entity_type": "boss_variant",
+      "canonical_name": "힐라 (하드)",
+      "description": "힐라의 하드 난이도 변형",
+      "aliases": [
+        "하드힐라",
+        "하드 힐라",
+        "힐라 하드"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:hilla-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "힐라 (노멀)",
+      "description": "힐라의 노멀 난이도 변형",
+      "aliases": [
+        "노말힐라",
+        "노멀힐라",
+        "노말 힐라",
+        "노멀 힐라",
+        "힐라 노말",
+        "힐라 노멀"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:horntail-chaos",
+      "entity_type": "boss_variant",
+      "canonical_name": "혼테일 (카오스)",
+      "description": "혼테일의 카오스 난이도 변형",
+      "aliases": [
+        "카오스혼테일",
+        "카오스 혼테일",
+        "혼테일 카오스"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:horntail-easy",
+      "entity_type": "boss_variant",
+      "canonical_name": "혼테일 (이지)",
+      "description": "혼테일의 이지 난이도 변형",
+      "aliases": [
+        "이지혼테일",
+        "혼테일 이지",
+        "이지 혼테일"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:horntail-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "혼테일 (노멀)",
+      "description": "혼테일의 노멀 난이도 변형",
+      "aliases": [
+        "노말혼테일",
+        "노멀혼테일",
+        "혼테일 노말",
+        "혼테일 노멀",
+        "노말 혼테일",
+        "노멀 혼테일"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:jupiter-hard",
+      "entity_type": "boss_variant",
+      "canonical_name": "유피테르 (하드)",
+      "description": "유피테르의 하드 난이도 변형",
+      "aliases": [
+        "하드유피테르",
+        "유피테르 하드",
+        "하드 유피테르"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:jupiter-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "유피테르 (노멀)",
+      "description": "유피테르의 노멀 난이도 변형",
+      "aliases": [
+        "노말유피테르",
+        "노멀유피테르",
+        "유피테르 노말",
+        "유피테르 노멀",
+        "노말 유피테르",
+        "노멀 유피테르"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:kaling-easy",
+      "entity_type": "boss_variant",
+      "canonical_name": "카링 (이지)",
+      "description": "카링의 이지 난이도 변형",
+      "aliases": [
+        "이지카링",
+        "이지 카링",
+        "카링 이지"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:kaling-extreme",
+      "entity_type": "boss_variant",
+      "canonical_name": "카링 (익스트림)",
+      "description": "카링의 익스트림 난이도 변형",
+      "aliases": [
+        "익스카링",
+        "익스트림카링",
+        "익스트림 카링",
+        "익스 카링",
+        "카링 익스",
+        "카링 익스트림"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:kaling-hard",
+      "entity_type": "boss_variant",
+      "canonical_name": "카링 (하드)",
+      "description": "카링의 하드 난이도 변형",
+      "aliases": [
+        "하드카링",
+        "카링 하드",
+        "하드 카링"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:kaling-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "카링 (노멀)",
+      "description": "카링의 노멀 난이도 변형",
+      "aliases": [
+        "노말카링",
+        "노멀카링",
+        "노말 카링",
+        "노멀 카링",
+        "카링 노말",
+        "카링 노멀"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:kaung-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "카웅 (노멀)",
+      "description": "카웅의 노멀 난이도 변형",
+      "aliases": [
+        "노말카웅",
+        "노멀카웅",
+        "노말 카웅",
+        "노멀 카웅",
+        "카웅 노말",
+        "카웅 노멀"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:limbo-hard",
+      "entity_type": "boss_variant",
+      "canonical_name": "림보 (하드)",
+      "description": "림보의 하드 난이도 변형",
+      "aliases": [
+        "하드림보",
+        "림보 하드",
+        "하드 림보"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:limbo-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "림보 (노멀)",
+      "description": "림보의 노멀 난이도 변형",
+      "aliases": [
+        "노말림보",
+        "노멀림보",
+        "노말 림보",
+        "노멀 림보",
+        "림보 노말",
+        "림보 노멀"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:lotus-extreme",
+      "entity_type": "boss_variant",
+      "canonical_name": "스우 (익스트림)",
+      "description": "스우의 익스트림 난이도 변형",
+      "aliases": [
+        "익스스우",
+        "익스트림스우",
+        "익스트림 스우",
+        "스우 익스",
+        "익스 스우",
+        "스우 익스트림"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:lotus-hard",
+      "entity_type": "boss_variant",
+      "canonical_name": "스우 (하드)",
+      "description": "스우의 하드 난이도 변형",
+      "aliases": [
+        "하드스우",
+        "스우 하드",
+        "하드 스우"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:lotus-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "스우 (노멀)",
+      "description": "스우의 노멀 난이도 변형",
+      "aliases": [
+        "노말스우",
+        "노멀스우",
+        "노말 스우",
+        "노멀 스우",
+        "스우 노말",
+        "스우 노멀"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:lucid-easy",
+      "entity_type": "boss_variant",
+      "canonical_name": "루시드 (이지)",
+      "description": "루시드의 이지 난이도 변형",
+      "aliases": [
+        "이지루시드",
+        "루시드 이지",
+        "이지 루시드"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:lucid-hard",
+      "entity_type": "boss_variant",
+      "canonical_name": "루시드 (하드)",
+      "description": "루시드의 하드 난이도 변형",
+      "aliases": [
+        "하드루시드",
+        "루시드 하드",
+        "하드 루시드"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:lucid-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "루시드 (노멀)",
+      "description": "루시드의 노멀 난이도 변형",
+      "aliases": [
+        "노말루시드",
+        "노멀루시드",
+        "루시드 노말",
+        "루시드 노멀",
+        "노말 루시드",
+        "노멀 루시드"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:magnus-easy",
+      "entity_type": "boss_variant",
+      "canonical_name": "매그너스 (이지)",
+      "description": "매그너스의 이지 난이도 변형",
+      "aliases": [
+        "이지매그너스",
+        "매그너스 이지",
+        "이지 매그너스"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:magnus-hard",
+      "entity_type": "boss_variant",
+      "canonical_name": "매그너스 (하드)",
+      "description": "매그너스의 하드 난이도 변형",
+      "aliases": [
+        "하드매그너스",
+        "매그너스 하드",
+        "하드 매그너스"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:magnus-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "매그너스 (노멀)",
+      "description": "매그너스의 노멀 난이도 변형",
+      "aliases": [
+        "노말매그너스",
+        "노멀매그너스",
+        "매그너스 노말",
+        "매그너스 노멀",
+        "노말 매그너스",
+        "노멀 매그너스"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:papulatus-chaos",
+      "entity_type": "boss_variant",
+      "canonical_name": "파풀라투스 (카오스)",
+      "description": "파풀라투스의 카오스 난이도 변형",
+      "aliases": [
+        "카오스파풀",
+        "카오스파풀라투스",
+        "파풀라투스 카오스",
+        "카오스 파풀",
+        "카오스 파풀라투스"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:papulatus-easy",
+      "entity_type": "boss_variant",
+      "canonical_name": "파풀라투스 (이지)",
+      "description": "파풀라투스의 이지 난이도 변형",
+      "aliases": [
+        "이지파풀",
+        "이지파풀라투스",
+        "파풀라투스 이지",
+        "이지 파풀",
+        "이지 파풀라투스"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:papulatus-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "파풀라투스 (노멀)",
+      "description": "파풀라투스의 노멀 난이도 변형",
+      "aliases": [
+        "노말파풀",
+        "노멀파풀",
+        "노말파풀라투스",
+        "노멀파풀라투스",
+        "파풀라투스 노말",
+        "파풀라투스 노멀",
+        "노말 파풀",
+        "노멀 파풀",
+        "노말 파풀라투스",
+        "노멀 파풀라투스"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:pierre-chaos",
+      "entity_type": "boss_variant",
+      "canonical_name": "피에르 (카오스)",
+      "description": "피에르의 카오스 난이도 변형",
+      "aliases": [
+        "카오스피에르",
+        "카오스 피에르",
+        "피에르 카오스"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:pierre-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "피에르 (노멀)",
+      "description": "피에르의 노멀 난이도 변형",
+      "aliases": [
+        "노말피에르",
+        "노멀피에르",
+        "피에르 노말",
+        "피에르 노멀",
+        "노말 피에르",
+        "노멀 피에르"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:pink-bean-chaos",
+      "entity_type": "boss_variant",
+      "canonical_name": "핑크빈 (카오스)",
+      "description": "핑크빈의 카오스 난이도 변형",
+      "aliases": [
+        "카오스핑크빈",
+        "카오스핑크 빈",
+        "카오스 핑크빈",
+        "핑크빈 카오스",
+        "카오스 핑크 빈"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:pink-bean-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "핑크빈 (노멀)",
+      "description": "핑크빈의 노멀 난이도 변형",
+      "aliases": [
+        "노말핑크빈",
+        "노멀핑크빈",
+        "노말핑크 빈",
+        "노멀핑크 빈",
+        "핑크빈 노말",
+        "핑크빈 노멀",
+        "노말 핑크빈",
+        "노멀 핑크빈",
+        "노말 핑크 빈",
+        "노멀 핑크 빈"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:vellum-chaos",
+      "entity_type": "boss_variant",
+      "canonical_name": "벨룸 (카오스)",
+      "description": "벨룸의 카오스 난이도 변형",
+      "aliases": [
+        "카오스벨룸",
+        "카오스 벨룸",
+        "벨룸 카오스"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:vellum-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "벨룸 (노멀)",
+      "description": "벨룸의 노멀 난이도 변형",
+      "aliases": [
+        "노말벨룸",
+        "노멀벨룸",
+        "노말 벨룸",
+        "노멀 벨룸",
+        "벨룸 노말",
+        "벨룸 노멀"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:verus-hilla-hard",
+      "entity_type": "boss_variant",
+      "canonical_name": "진 힐라 (하드)",
+      "description": "진 힐라의 하드 난이도 변형",
+      "aliases": [
+        "하드진힐",
+        "하드진힐라",
+        "하드진 힐라",
+        "하드 진힐",
+        "하드 진힐라",
+        "하드 진 힐라",
+        "진 힐라 하드"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:verus-hilla-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "진 힐라 (노멀)",
+      "description": "진 힐라의 노멀 난이도 변형",
+      "aliases": [
+        "노말진힐",
+        "노멀진힐",
+        "노말진힐라",
+        "노멀진힐라",
+        "노말진 힐라",
+        "노멀진 힐라",
+        "노말 진힐",
+        "노멀 진힐",
+        "노말 진힐라",
+        "노멀 진힐라",
+        "노말 진 힐라",
+        "노멀 진 힐라",
+        "진 힐라 노말",
+        "진 힐라 노멀"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:von-bon-chaos",
+      "entity_type": "boss_variant",
+      "canonical_name": "반반 (카오스)",
+      "description": "반반의 카오스 난이도 변형",
+      "aliases": [
+        "카오스반반",
+        "카오스 반반",
+        "반반 카오스"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:von-bon-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "반반 (노멀)",
+      "description": "반반의 노멀 난이도 변형",
+      "aliases": [
+        "노말반반",
+        "노멀반반",
+        "노말 반반",
+        "노멀 반반",
+        "반반 노말",
+        "반반 노멀"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:von-leon-easy",
+      "entity_type": "boss_variant",
+      "canonical_name": "반레온 (이지)",
+      "description": "반레온의 이지 난이도 변형",
+      "aliases": [
+        "이지반레온",
+        "반레온 이지",
+        "이지반 레온",
+        "이지 반레온",
+        "이지 반 레온"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:von-leon-hard",
+      "entity_type": "boss_variant",
+      "canonical_name": "반레온 (하드)",
+      "description": "반레온의 하드 난이도 변형",
+      "aliases": [
+        "하드반레온",
+        "반레온 하드",
+        "하드반 레온",
+        "하드 반레온",
+        "하드 반 레온"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:von-leon-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "반레온 (노멀)",
+      "description": "반레온의 노멀 난이도 변형",
+      "aliases": [
+        "노말반레온",
+        "노멀반레온",
+        "노말반 레온",
+        "노멀반 레온",
+        "반레온 노말",
+        "반레온 노멀",
+        "노말 반레온",
+        "노멀 반레온",
+        "노말 반 레온",
+        "노멀 반 레온"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:watcher-kalos-chaos",
+      "entity_type": "boss_variant",
+      "canonical_name": "감시자 칼로스 (카오스)",
+      "description": "감시자 칼로스의 카오스 난이도 변형",
+      "aliases": [
+        "카오스칼로스",
+        "카오스감시자 칼로스",
+        "카오스 칼로스",
+        "감시자 칼로스 카오스",
+        "카오스 감시자 칼로스"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:watcher-kalos-easy",
+      "entity_type": "boss_variant",
+      "canonical_name": "감시자 칼로스 (이지)",
+      "description": "감시자 칼로스의 이지 난이도 변형",
+      "aliases": [
+        "이지칼로스",
+        "이지감시자 칼로스",
+        "감시자 칼로스 이지",
+        "이지 칼로스",
+        "이지 감시자 칼로스"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:watcher-kalos-extreme",
+      "entity_type": "boss_variant",
+      "canonical_name": "감시자 칼로스 (익스트림)",
+      "description": "감시자 칼로스의 익스트림 난이도 변형",
+      "aliases": [
+        "익스칼로스",
+        "익스트림칼로스",
+        "익스트림감시자 칼로스",
+        "익스감시자 칼로스",
+        "익스트림 칼로스",
+        "익스트림 감시자 칼로스",
+        "감시자 칼로스 익스",
+        "감시자 칼로스 익스트림",
+        "익스 칼로스",
+        "익스 감시자 칼로스"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:watcher-kalos-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "감시자 칼로스 (노멀)",
+      "description": "감시자 칼로스의 노멀 난이도 변형",
+      "aliases": [
+        "노말칼로스",
+        "노멀칼로스",
+        "노말감시자 칼로스",
+        "노멀감시자 칼로스",
+        "감시자 칼로스 노말",
+        "감시자 칼로스 노멀",
+        "노말 칼로스",
+        "노멀 칼로스",
+        "노말 감시자 칼로스",
+        "노멀 감시자 칼로스"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:will-easy",
+      "entity_type": "boss_variant",
+      "canonical_name": "윌 (이지)",
+      "description": "윌의 이지 난이도 변형",
+      "aliases": [
+        "이지윌",
+        "이지 윌",
+        "윌 이지"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:will-hard",
+      "entity_type": "boss_variant",
+      "canonical_name": "윌 (하드)",
+      "description": "윌의 하드 난이도 변형",
+      "aliases": [
+        "하드윌",
+        "하드 윌",
+        "윌 하드"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:will-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "윌 (노멀)",
+      "description": "윌의 노멀 난이도 변형",
+      "aliases": [
+        "노말윌",
+        "노멀윌",
+        "노말 윌",
+        "노멀 윌",
+        "윌 노말",
+        "윌 노멀"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:zakum-chaos",
+      "entity_type": "boss_variant",
+      "canonical_name": "자쿰 (카오스)",
+      "description": "자쿰의 카오스 난이도 변형",
+      "aliases": [
+        "카오스자쿰",
+        "카오스 자쿰",
+        "자쿰 카오스"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:zakum-easy",
+      "entity_type": "boss_variant",
+      "canonical_name": "자쿰 (이지)",
+      "description": "자쿰의 이지 난이도 변형",
+      "aliases": [
+        "이지자쿰",
+        "이지 자쿰",
+        "자쿰 이지"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:zakum-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "자쿰 (노멀)",
+      "description": "자쿰의 노멀 난이도 변형",
+      "aliases": [
+        "노말자쿰",
+        "노멀자쿰",
+        "노말 자쿰",
+        "노멀 자쿰",
+        "자쿰 노말",
+        "자쿰 노멀"
+      ]
+    },
+    {
+      "entity_id": "boss:vellum",
+      "entity_type": "boss",
+      "canonical_name": "벨룸",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:verus-hilla",
+      "entity_type": "boss",
+      "canonical_name": "진 힐라",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": [
+        "진힐",
+        "진힐라"
+      ]
+    },
+    {
+      "entity_id": "boss:von-bon",
+      "entity_type": "boss",
+      "canonical_name": "반반",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:von-leon",
+      "entity_type": "boss",
+      "canonical_name": "반레온",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": [
+        "반 레온"
+      ]
+    },
+    {
+      "entity_id": "boss:watcher-kalos",
+      "entity_type": "boss",
+      "canonical_name": "감시자 칼로스",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": [
+        "칼로스"
+      ]
+    },
+    {
+      "entity_id": "boss:will",
+      "entity_type": "boss",
+      "canonical_name": "윌",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss:zakum",
+      "entity_type": "boss",
+      "canonical_name": "자쿰",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스 엔티티",
+      "aliases": []
+    },
+    {
+      "entity_id": "difficulty:chaos",
+      "entity_type": "difficulty",
+      "canonical_name": "카오스 난이도",
+      "description": "공식 보스 난이도: 카오스",
+      "aliases": []
+    },
+    {
+      "entity_id": "difficulty:easy",
+      "entity_type": "difficulty",
+      "canonical_name": "이지 난이도",
+      "description": "공식 보스 난이도: 이지",
+      "aliases": []
+    },
+    {
+      "entity_id": "difficulty:extreme",
+      "entity_type": "difficulty",
+      "canonical_name": "익스트림 난이도",
+      "description": "공식 보스 난이도: 익스트림",
+      "aliases": [
+        "익스 난이도"
+      ]
+    },
+    {
+      "entity_id": "difficulty:hard",
+      "entity_type": "difficulty",
+      "canonical_name": "하드 난이도",
+      "description": "공식 보스 난이도: 하드",
+      "aliases": []
+    },
+    {
+      "entity_id": "difficulty:normal",
+      "entity_type": "difficulty",
+      "canonical_name": "노멀 난이도",
+      "description": "공식 보스 난이도: 노멀",
+      "aliases": [
+        "노말 난이도"
+      ]
+    },
+    {
+      "entity_id": "taxonomy:bosses",
+      "entity_type": "taxonomy",
+      "canonical_name": "보스 콘텐츠",
+      "description": "메이플스토리 공식 보스 가이드에 수록된 보스와 난이도 변형의 분류 체계",
+      "aliases": [
+        "보스",
+        "보스 몬스터"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "subject_entity_id": "boss-variant:will-easy",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:easy"
+    },
+    {
+      "subject_entity_id": "boss:von-bon",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:bellona-hard",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:bellona"
+    },
+    {
+      "subject_entity_id": "boss-variant:von-leon-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:von-leon"
+    },
+    {
+      "subject_entity_id": "boss-variant:von-bon-chaos",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:von-bon"
+    },
+    {
+      "subject_entity_id": "boss-variant:will-hard",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:hard"
+    },
+    {
+      "subject_entity_id": "boss-variant:kaling-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:kaling-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:kaling"
+    },
+    {
+      "subject_entity_id": "boss-variant:zakum-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:zakum"
+    },
+    {
+      "subject_entity_id": "boss-variant:hilla-hard",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:hard"
+    },
+    {
+      "subject_entity_id": "boss:vellum",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss:bloody-queen",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:watcher-kalos-extreme",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:watcher-kalos"
+    },
+    {
+      "subject_entity_id": "boss:lucid",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:first-adversary-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss:limbo",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:zakum-chaos",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:chaos"
+    },
+    {
+      "subject_entity_id": "boss-variant:chosen-seren-hard",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:hard"
+    },
+    {
+      "subject_entity_id": "boss-variant:verus-hilla-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:verus-hilla"
+    },
+    {
+      "subject_entity_id": "boss-variant:cygnus-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:von-leon-easy",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:easy"
+    },
+    {
+      "subject_entity_id": "boss-variant:papulatus-chaos",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:papulatus"
+    },
+    {
+      "subject_entity_id": "boss:gloom",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:guard-captain-darknell-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:von-bon-chaos",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:chaos"
+    },
+    {
+      "subject_entity_id": "boss-variant:balrog-easy",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:easy"
+    },
+    {
+      "subject_entity_id": "boss-variant:kaung-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:bellona-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss:first-adversary",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss:will",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss:kaling",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:chosen-seren-extreme",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:chosen-seren"
+    },
+    {
+      "subject_entity_id": "boss-variant:arkarium-easy",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:easy"
+    },
+    {
+      "subject_entity_id": "boss-variant:damien-hard",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:hard"
+    },
+    {
+      "subject_entity_id": "boss-variant:horntail-chaos",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:chaos"
+    },
+    {
+      "subject_entity_id": "boss-variant:will-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:will"
+    },
+    {
+      "subject_entity_id": "boss-variant:lucid-easy",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:lucid"
+    },
+    {
+      "subject_entity_id": "boss-variant:black-mage-extreme",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:black-mage"
+    },
+    {
+      "subject_entity_id": "boss-variant:papulatus-easy",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:easy"
+    },
+    {
+      "subject_entity_id": "boss-variant:brilliant-malefic-star-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:brilliant-malefic-star"
+    },
+    {
+      "subject_entity_id": "boss-variant:bellona-easy",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:bellona"
+    },
+    {
+      "subject_entity_id": "boss-variant:guardian-angel-slime-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:guardian-angel-slime"
+    },
+    {
+      "subject_entity_id": "boss:guard-captain-darknell",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:damien-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:gloom-chaos",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:gloom"
+    },
+    {
+      "subject_entity_id": "boss:cygnus",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:baldrix-hard",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:hard"
+    },
+    {
+      "subject_entity_id": "boss-variant:papulatus-easy",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:papulatus"
+    },
+    {
+      "subject_entity_id": "boss:watcher-kalos",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:zakum-chaos",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:zakum"
+    },
+    {
+      "subject_entity_id": "boss-variant:first-adversary-extreme",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:extreme"
+    },
+    {
+      "subject_entity_id": "boss-variant:bellona-easy",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:easy"
+    },
+    {
+      "subject_entity_id": "boss:magnus",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:papulatus-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:papulatus"
+    },
+    {
+      "subject_entity_id": "boss-variant:lotus-hard",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:hard"
+    },
+    {
+      "subject_entity_id": "boss-variant:chosen-seren-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:chosen-seren"
+    },
+    {
+      "subject_entity_id": "boss-variant:baldrix-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:lucid-hard",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:hard"
+    },
+    {
+      "subject_entity_id": "boss-variant:verus-hilla-hard",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:verus-hilla"
+    },
+    {
+      "subject_entity_id": "boss-variant:lucid-easy",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:easy"
+    },
+    {
+      "subject_entity_id": "boss-variant:gloom-chaos",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:chaos"
+    },
+    {
+      "subject_entity_id": "boss-variant:horntail-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:horntail"
+    },
+    {
+      "subject_entity_id": "boss-variant:brilliant-malefic-star-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:guard-captain-darknell-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:guard-captain-darknell"
+    },
+    {
+      "subject_entity_id": "boss-variant:hilla-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:bloody-queen-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:bloody-queen"
+    },
+    {
+      "subject_entity_id": "boss-variant:will-hard",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:will"
+    },
+    {
+      "subject_entity_id": "boss-variant:limbo-hard",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:limbo"
+    },
+    {
+      "subject_entity_id": "boss-variant:gloom-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:brilliant-malefic-star-hard",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:hard"
+    },
+    {
+      "subject_entity_id": "boss-variant:first-adversary-hard",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:first-adversary"
+    },
+    {
+      "subject_entity_id": "boss-variant:pink-bean-chaos",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:chaos"
+    },
+    {
+      "subject_entity_id": "boss-variant:first-adversary-extreme",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:first-adversary"
+    },
+    {
+      "subject_entity_id": "boss-variant:watcher-kalos-easy",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:watcher-kalos"
+    },
+    {
+      "subject_entity_id": "boss-variant:guardian-angel-slime-chaos",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:chaos"
+    },
+    {
+      "subject_entity_id": "boss-variant:magnus-easy",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:magnus"
+    },
+    {
+      "subject_entity_id": "boss-variant:damien-hard",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:damien"
+    },
+    {
+      "subject_entity_id": "boss-variant:watcher-kalos-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:watcher-kalos"
+    },
+    {
+      "subject_entity_id": "boss:jupiter",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:chosen-seren-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:pierre-chaos",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:pierre"
+    },
+    {
+      "subject_entity_id": "boss-variant:first-adversary-easy",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:first-adversary"
+    },
+    {
+      "subject_entity_id": "boss-variant:watcher-kalos-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:zakum-easy",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:zakum"
+    },
+    {
+      "subject_entity_id": "boss-variant:cygnus-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:cygnus"
+    },
+    {
+      "subject_entity_id": "boss:zakum",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:von-bon-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:vellum-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:pink-bean-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:pink-bean"
+    },
+    {
+      "subject_entity_id": "boss-variant:von-leon-hard",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:hard"
+    },
+    {
+      "subject_entity_id": "boss-variant:pierre-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:pierre"
+    },
+    {
+      "subject_entity_id": "boss-variant:limbo-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:pink-bean-chaos",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:pink-bean"
+    },
+    {
+      "subject_entity_id": "boss:pierre",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:kaung-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:kaung"
+    },
+    {
+      "subject_entity_id": "boss:von-leon",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:horntail-easy",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:horntail"
+    },
+    {
+      "subject_entity_id": "boss-variant:von-bon-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:von-bon"
+    },
+    {
+      "subject_entity_id": "boss:chosen-seren",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:vellum-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:vellum"
+    },
+    {
+      "subject_entity_id": "boss:pink-bean",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:first-adversary-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:first-adversary"
+    },
+    {
+      "subject_entity_id": "boss-variant:magnus-hard",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:hard"
+    },
+    {
+      "subject_entity_id": "boss-variant:lucid-hard",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:lucid"
+    },
+    {
+      "subject_entity_id": "boss-variant:watcher-kalos-extreme",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:extreme"
+    },
+    {
+      "subject_entity_id": "boss-variant:watcher-kalos-easy",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:easy"
+    },
+    {
+      "subject_entity_id": "boss-variant:lotus-hard",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:lotus"
+    },
+    {
+      "subject_entity_id": "boss-variant:first-adversary-hard",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:hard"
+    },
+    {
+      "subject_entity_id": "boss-variant:horntail-easy",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:easy"
+    },
+    {
+      "subject_entity_id": "boss-variant:damien-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:damien"
+    },
+    {
+      "subject_entity_id": "boss-variant:jupiter-hard",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:hard"
+    },
+    {
+      "subject_entity_id": "boss-variant:jupiter-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:pink-bean-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss:baldrix",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:bellona-hard",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:hard"
+    },
+    {
+      "subject_entity_id": "boss-variant:von-leon-hard",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:von-leon"
+    },
+    {
+      "subject_entity_id": "boss-variant:zakum-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:gloom-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:gloom"
+    },
+    {
+      "subject_entity_id": "boss-variant:first-adversary-easy",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:easy"
+    },
+    {
+      "subject_entity_id": "boss:brilliant-malefic-star",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:vellum-chaos",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:chaos"
+    },
+    {
+      "subject_entity_id": "boss-variant:magnus-hard",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:magnus"
+    },
+    {
+      "subject_entity_id": "boss-variant:vellum-chaos",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:vellum"
+    },
+    {
+      "subject_entity_id": "boss-variant:bloody-queen-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:jupiter-hard",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:jupiter"
+    },
+    {
+      "subject_entity_id": "boss-variant:lucid-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:lucid"
+    },
+    {
+      "subject_entity_id": "boss-variant:jupiter-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:jupiter"
+    },
+    {
+      "subject_entity_id": "boss-variant:chosen-seren-extreme",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:extreme"
+    },
+    {
+      "subject_entity_id": "boss:guardian-angel-slime",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss:hilla",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss:verus-hilla",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:lotus-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:watcher-kalos-chaos",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:watcher-kalos"
+    },
+    {
+      "subject_entity_id": "boss:horntail",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:arkarium-easy",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:arkarium"
+    },
+    {
+      "subject_entity_id": "boss-variant:will-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss:bellona",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:watcher-kalos-chaos",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:chaos"
+    },
+    {
+      "subject_entity_id": "boss-variant:hilla-hard",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:hilla"
+    },
+    {
+      "subject_entity_id": "boss-variant:magnus-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss:damien",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:guard-captain-darknell-hard",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:guard-captain-darknell"
+    },
+    {
+      "subject_entity_id": "boss:balrog",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss:kaung",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:zakum-easy",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:easy"
+    },
+    {
+      "subject_entity_id": "boss:papulatus",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:kaling-easy",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:easy"
+    },
+    {
+      "subject_entity_id": "boss-variant:papulatus-chaos",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:chaos"
+    },
+    {
+      "subject_entity_id": "boss-variant:black-mage-hard",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:hard"
+    },
+    {
+      "subject_entity_id": "boss-variant:limbo-hard",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:hard"
+    },
+    {
+      "subject_entity_id": "boss-variant:limbo-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:limbo"
+    },
+    {
+      "subject_entity_id": "boss-variant:baldrix-hard",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:baldrix"
+    },
+    {
+      "subject_entity_id": "boss-variant:chosen-seren-hard",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:chosen-seren"
+    },
+    {
+      "subject_entity_id": "boss-variant:guard-captain-darknell-hard",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:hard"
+    },
+    {
+      "subject_entity_id": "boss-variant:lotus-extreme",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:extreme"
+    },
+    {
+      "subject_entity_id": "boss-variant:black-mage-extreme",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:extreme"
+    },
+    {
+      "subject_entity_id": "boss-variant:von-leon-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:bloody-queen-chaos",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:chaos"
+    },
+    {
+      "subject_entity_id": "boss-variant:kaling-hard",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:kaling"
+    },
+    {
+      "subject_entity_id": "boss-variant:brilliant-malefic-star-hard",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:brilliant-malefic-star"
+    },
+    {
+      "subject_entity_id": "boss-variant:magnus-easy",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:easy"
+    },
+    {
+      "subject_entity_id": "boss:lotus",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:hilla-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:hilla"
+    },
+    {
+      "subject_entity_id": "boss-variant:verus-hilla-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:bellona-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:bellona"
+    },
+    {
+      "subject_entity_id": "boss-variant:pierre-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:guardian-angel-slime-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:pierre-chaos",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:chaos"
+    },
+    {
+      "subject_entity_id": "boss-variant:kaling-hard",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:hard"
+    },
+    {
+      "subject_entity_id": "boss:black-mage",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    },
+    {
+      "subject_entity_id": "boss-variant:horntail-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:will-easy",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:will"
+    },
+    {
+      "subject_entity_id": "boss-variant:papulatus-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:magnus-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:magnus"
+    },
+    {
+      "subject_entity_id": "boss-variant:arkarium-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:kaling-extreme",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:kaling"
+    },
+    {
+      "subject_entity_id": "boss-variant:balrog-easy",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:balrog"
+    },
+    {
+      "subject_entity_id": "boss-variant:horntail-chaos",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:horntail"
+    },
+    {
+      "subject_entity_id": "boss-variant:verus-hilla-hard",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:hard"
+    },
+    {
+      "subject_entity_id": "boss-variant:guardian-angel-slime-chaos",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:guardian-angel-slime"
+    },
+    {
+      "subject_entity_id": "boss-variant:kaling-easy",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:kaling"
+    },
+    {
+      "subject_entity_id": "boss-variant:von-leon-easy",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:von-leon"
+    },
+    {
+      "subject_entity_id": "boss-variant:lotus-extreme",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:lotus"
+    },
+    {
+      "subject_entity_id": "boss-variant:lotus-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:lotus"
+    },
+    {
+      "subject_entity_id": "boss-variant:arkarium-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:arkarium"
+    },
+    {
+      "subject_entity_id": "boss-variant:lucid-normal",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:normal"
+    },
+    {
+      "subject_entity_id": "boss-variant:baldrix-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:baldrix"
+    },
+    {
+      "subject_entity_id": "boss-variant:black-mage-hard",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:black-mage"
+    },
+    {
+      "subject_entity_id": "boss-variant:bloody-queen-chaos",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:bloody-queen"
+    },
+    {
+      "subject_entity_id": "boss-variant:kaling-extreme",
+      "predicate": "has_difficulty",
+      "object_entity_id": "difficulty:extreme"
+    },
+    {
+      "subject_entity_id": "boss:arkarium",
+      "predicate": "part_of",
+      "object_entity_id": "taxonomy:bosses"
+    }
+  ]
+}

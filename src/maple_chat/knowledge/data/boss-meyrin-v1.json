@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "source": {
+    "source_id": "nexon-meyrin-update-1-2-416",
+    "title": "클라이언트 1.2.416 업데이트 안내 - 신규 시즌 보스 메이린",
+    "url": "https://maplestory.nexon.com/News/Update/805",
+    "publisher": "NEXON Korea",
+    "version": "1.2.416-2026-06-18",
+    "checked_at": "2026-08-24T15:00:00+00:00"
+  },
+  "allowed_ambiguous_aliases": [],
+  "external_entity_ids": [],
+  "entities": [
+    {
+      "entity_id": "boss:meyrin",
+      "entity_type": "boss",
+      "canonical_name": "메이린",
+      "description": "클라이언트 1.2.416에서 추가된 시즌 보스 엔티티로 벨로나와 별개다.",
+      "aliases": []
+    },
+    {
+      "entity_id": "boss-variant:meyrin-hard",
+      "entity_type": "boss_variant",
+      "canonical_name": "메이린 (하드)",
+      "description": "메이린의 하드 난이도 변형",
+      "aliases": [
+        "하메",
+        "하드메이린",
+        "하드 메이린"
+      ]
+    },
+    {
+      "entity_id": "boss-variant:meyrin-normal",
+      "entity_type": "boss_variant",
+      "canonical_name": "메이린 (노멀)",
+      "description": "메이린의 노멀 난이도 변형. 노말은 노멀의 커뮤니티 표기다.",
+      "aliases": [
+        "노말메이린",
+        "노말 메이린",
+        "노멀 메이린"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "subject_entity_id": "boss-variant:meyrin-hard",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:meyrin"
+    },
+    {
+      "subject_entity_id": "boss-variant:meyrin-normal",
+      "predicate": "variant_of",
+      "object_entity_id": "boss:meyrin"
+    }
+  ]
+}

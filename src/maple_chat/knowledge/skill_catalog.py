@@ -1,10 +1,11 @@
 """Ground truth skill catalog loader, per-job taxonomy, and guide validator."""
+
 from __future__ import annotations
 
 import json
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 CATALOG_PATH = Path(__file__).resolve().parent / "data" / "job-skill-catalog-v1.json"
 
@@ -22,7 +23,7 @@ def load_skill_catalog(force_reload: bool = False) -> dict[str, Any]:
         return _CATALOG_CACHE
 
     try:
-        with open(CATALOG_PATH, "r", encoding="utf-8") as f:
+        with open(CATALOG_PATH, encoding="utf-8") as f:
             _CATALOG_CACHE = json.load(f)
     except Exception:
         _CATALOG_CACHE = {"jobs": {}, "common_skills": [], "total_jobs": 0}
@@ -34,25 +35,17 @@ def get_job_skill_details(job_name: str) -> dict[str, Any]:
     cat = load_skill_catalog()
     if not cat or "jobs" not in cat or job_name not in cat["jobs"]:
         return {}
-    return cat["jobs"][job_name]
+    return cast(dict[str, Any], cat["jobs"][job_name])
 
 
 def get_job_taxonomy(job_name: str) -> dict[str, Any]:
     """Get verified skill taxonomy for a job."""
     details = get_job_skill_details(job_name)
     if "taxonomy" in details:
-        return details["taxonomy"]
+        return cast(dict[str, Any], details["taxonomy"])
     if details and any(k in details for k in ["1차", "2차", "3차", "4차", "5차", "6차", "하이퍼"]):
         return details
-    return {
-        "1차": [],
-        "2차": [],
-        "3차": [],
-        "4차": [],
-        "하이퍼": [],
-        "5차": [],
-        "6차": []
-    }
+    return {"1차": [], "2차": [], "3차": [], "4차": [], "하이퍼": [], "5차": [], "6차": []}
 
 
 def get_grounded_v_matrix(job_name: str) -> dict[str, list[str]] | None:
@@ -76,7 +69,7 @@ def get_job_skill_whitelist(job_name: str) -> list[str]:
     whitelist = set(commons)
 
     if details:
-        for sec, slist in details.items():
+        for _section, slist in details.items():
             if isinstance(slist, list):
                 whitelist.update(slist)
             elif isinstance(slist, dict):
@@ -85,10 +78,53 @@ def get_job_skill_whitelist(job_name: str) -> list[str]:
                         whitelist.update(sub_list)
 
     THIEF_JOBS = ["나이트로드", "섀도어", "듀얼블레이더", "팬텀", "카데나", "칼리", "호영", "제논"]
-    MAGE_JOBS = ["아크메이지(불,독)", "아크메이지(썬,콜)", "비숍", "플레임위자드", "배틀메이지", "에반", "루미너스", "일리움", "라라", "키네시스"]
-    WARRIOR_JOBS = ["히어로", "팔라딘", "다크나이트", "소울마스터", "미하일", "블래스터", "데몬슬레이어", "데몬어벤져", "아란", "카이저", "아델", "제로", "렌"]
-    ARCHER_JOBS = ["보우마스터", "신궁", "패스파인더", "윈드브레이커", "와일드헌터", "메르세데스", "카인"]
-    PIRATE_JOBS = ["바이퍼", "캡틴", "캐논슈터", "스트라이커", "메카닉", "은월", "엔젤릭버스터", "아크", "제논"]
+    MAGE_JOBS = [
+        "아크메이지(불,독)",
+        "아크메이지(썬,콜)",
+        "비숍",
+        "플레임위자드",
+        "배틀메이지",
+        "에반",
+        "루미너스",
+        "일리움",
+        "라라",
+        "키네시스",
+    ]
+    WARRIOR_JOBS = [
+        "히어로",
+        "팔라딘",
+        "다크나이트",
+        "소울마스터",
+        "미하일",
+        "블래스터",
+        "데몬슬레이어",
+        "데몬어벤져",
+        "아란",
+        "카이저",
+        "아델",
+        "제로",
+        "렌",
+    ]
+    ARCHER_JOBS = [
+        "보우마스터",
+        "신궁",
+        "패스파인더",
+        "윈드브레이커",
+        "와일드헌터",
+        "메르세데스",
+        "카인",
+    ]
+    PIRATE_JOBS = [
+        "바이퍼",
+        "캡틴",
+        "캐논슈터",
+        "스트라이커",
+        "메카닉",
+        "은월",
+        "엔젤릭버스터",
+        "아크",
+        "제논",
+    ]
 
     if job_name in THIEF_JOBS:
         whitelist.update(family_map.get("도적", []))
@@ -107,7 +143,13 @@ def get_job_skill_whitelist(job_name: str) -> list[str]:
 def validate_guide_skills(guide_dict: dict[str, Any], job_name: str) -> dict[str, Any]:
     whitelist = set(get_job_skill_whitelist(job_name))
     if not whitelist:
-        return {"valid": True, "unverified": True, "match_ratio": 1.0, "matched_skills": [], "unknown_skills": []}
+        return {
+            "valid": True,
+            "unverified": True,
+            "match_ratio": 1.0,
+            "matched_skills": [],
+            "unknown_skills": [],
+        }
 
     guide_skills = set()
     br = guide_dict.get("burst_rotation", {})
@@ -145,7 +187,9 @@ def validate_guide_skills(guide_dict: dict[str, Any], job_name: str) -> dict[str
         for core_list in cv.values():
             if isinstance(core_list, list):
                 for core_str in core_list:
-                    cleaned = re.sub(r'^(오리진|마스터리 코어|스킬 코어|강화 코어)[\s:]*', '', core_str).strip()
+                    cleaned = re.sub(
+                        r"^(오리진|마스터리 코어|스킬 코어|강화 코어)[\s:]*", "", core_str
+                    ).strip()
                     matched_core = False
                     for s in whitelist:
                         if s in cleaned or cleaned in s:
@@ -163,4 +207,3 @@ def validate_guide_skills(guide_dict: dict[str, Any], job_name: str) -> dict[str
         "matched_skills": sorted(list(matched)),
         "unknown_skills": sorted(list(unknown)),
     }
-
